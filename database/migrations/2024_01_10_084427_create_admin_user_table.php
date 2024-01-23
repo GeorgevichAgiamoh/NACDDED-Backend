@@ -12,14 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admin_user', function (Blueprint $table) {
-            $table->string('memid')->primary();
+            $table->string('email')->primary();
             $table->string('lname');
             $table->string('oname');
-            $table->string('eml');
             $table->string('role');
 
             $table->string('pd1');
             $table->string('pd2');
+            $table->string('pw1');
+            $table->string('pw2');
             $table->string('pp1');
             $table->string('pp2');
             $table->string('pm1');

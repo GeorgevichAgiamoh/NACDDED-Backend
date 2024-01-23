@@ -84,7 +84,6 @@ When you successfully call the `login` endpoint, an access token will be returne
     "status": true,
     "message": "User login successfully",
     "token": "A long token string",
-    "pld": "info about the user",
 }
 ```
 
@@ -106,8 +105,7 @@ No auth required to access these endpoints
 
 ```json
 {
-    "memid":"required|unique:users",
-    "phn": "nullable|unique:users",
+    "email":"required|email|unique:users",
     "password": "required",
 }
 ```
@@ -118,9 +116,9 @@ No auth required to access these endpoints
 
 ```json
 {
-    "memid":"nullable",
-    "phn": "nullable",
+    "email":"required|email",
     "password": "required",
+}
 ```
 
 
@@ -146,18 +144,17 @@ pd2 = Permission to write to directory
 
 ```json
 {
-    "memid":"required",
-    "lname":"required",
+    "email":"required|email",
+    "lname": "required",
     "oname": "required",
-    "eml": "required",
-    "role":"required",
+    "role": "required",
     "pd1": "required",
     "pd2": "required",
     "pw1": "required",
     "pw2": "required",
-    "pp1":"required",
+    "pp1": "required",
     "pp2": "required",
     "pm1": "required",
-    "pm2":"required",
+    "pm2": "required",
 }
 ```

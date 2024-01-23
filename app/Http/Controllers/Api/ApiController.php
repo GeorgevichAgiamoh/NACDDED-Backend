@@ -27,18 +27,16 @@ class ApiController extends Controller
     public function register(Request $request){
         //Data validation
         $request->validate([
-            "memid"=>"required|unique:users",
-            "phn"=> "nullable|unique:users",
+            "email"=>"required|email|unique:users",
             "password"=> "required",
         ]);
         //Save Data to DB
         User::create([
-            "memid"=> $request->memid,
-            "phn"=> $request->phn,
+            "email"=> $request->email,
             "password"=> bcrypt($request->password),
         ]);
         $token = JWTAuth::attempt([
-            "memid"=> $request->memid,
+            "email"=> $request->email,
             "password"=> $request->password,
         ]);
         if(!empty($token)){
@@ -59,29 +57,21 @@ class ApiController extends Controller
     public function login(Request $request){
         //Data validation
         $request->validate([
-            "memid"=>"nullable",
-            "phn"=> "nullable",
+            "email"=>"required|email",
             "password"=> "required",
         ]);
         $mid = $request->memid;
         $phn = $request->phn;
-        if(!empty($mid) || !empty($eml)){
-            $pld = User::where(!empty($mid)?"memid":"phn","=", !empty($mid)?$mid:$phn)->first();
-            if($pld){
-                //JWT Auth
-                $token = JWTAuth::attempt([
-                    "memid"=> $pld->memid,
-                    "password"=> $request->password,
-                ]);
-                if(!empty($token)){
-                    return response()->json([
-                        "status"=> true,
-                        "message"=> "User login successfully",
-                        "token"=> $token,
-                        "pld"=> $pld,
-                    ]);
-                }
-            }
+        $token = JWTAuth::attempt([
+            "email"=> $request->email,
+            "password"=> $request->password,
+        ]);
+        if(!empty($token)){
+            return response()->json([
+                "status"=> true,
+                "message"=> "User login successfully",
+                "token"=> $token,
+            ]);
         }
         // Respond
         return response()->json([
@@ -153,12 +143,14 @@ class ApiController extends Controller
 
     public function authAsAdmin(){
         $user = auth()->user();
-        $apld = admin_user::where("memid","=", $user->memid)->first();
+        $apld = admin_user::where("email","=", $user->email)->first();
         if($apld){
             $customClaims = [
                 'role'=>$apld->role,
                 'pd1' => $apld->pd1, 
                 'pd2' => $apld->pd2, 
+                'pw1' => $apld->pw1, 
+                'pw2' => $apld->pw2, 
                 'pp1' => $apld->pp1, 
                 'pp2' => $apld->pp2, 
                 'pm1' => $apld->pm1, 
@@ -435,27 +427,29 @@ class ApiController extends Controller
     //POST
     public function setAdminUserInfo(Request $request){
         $request->validate([
-            "memid"=>"required",
+            "email"=>"required|email",
             "lname"=> "required",
             "oname"=> "required",
-            "eml"=> "required|email",
             "role"=> "required",
             "pd1"=> "required",
             "pd2"=> "required",
+            "pw1"=> "required",
+            "pw2"=> "required",
             "pp1"=> "required",
             "pp2"=> "required",
             "pm1"=> "required",
             "pm2"=> "required",
         ]);
         admin_user::updateOrCreate(
-            ["memid"=> $request->memid,],
+            ["email"=> $request->email,],
             [
             "lname"=> $request->lname,
             "oname"=> $request->oname,
-            "eml"=> $request->eml,
             "role"=> $request->role,
             "pd1"=> $request->pd1,
             "pd2"=> $request->pd2,
+            "pw1"=> $request->pw1,
+            "pw2"=> $request->pw2,
             "pp1"=> $request->pp1,
             "pp2"=> $request->pp2,
             "pm1"=> $request->pm1,
