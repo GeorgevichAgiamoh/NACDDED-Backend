@@ -2,9 +2,14 @@
 
 ## Info
 Company: Stable Shield Solutions
+
 Developer: Daniel, Remote fullstack developer
+
 Technology: PHP, Laravel, MySQL
+
 Started: 22/1/24
+
+
 
 ## Progress Update
 
@@ -25,6 +30,8 @@ Started: 22/1/24
 > Messaging (~)
 
 
+
+
 ## Notes on Data Structure
 
 All values are in string (no date, or int). Not relevant to the frontend engineer but short values are `string` while long ones are `text`.
@@ -40,6 +47,9 @@ All values are in string (no date, or int). Not relevant to the frontend enginee
 > Endpoints used to create data can also be called to update data
 
 Please follow the data structure strictly or an error will be thrown. For error handling:
+
+
+
 
 
 ### Error Handling
@@ -62,6 +72,9 @@ If status prop is false, a message will be included in the message prop indicati
 ```
 
 
+
+
+
 ### Auth
 
 When you successfully call the `login` endpoint, an access token will be returned such as:
@@ -76,6 +89,8 @@ When you successfully call the `login` endpoint, an access token will be returne
 ```
 
 While you can call `UNPROTECTED` endpoints without authentication, you will need to include this token for other endpoints (include it as a `Bearer` token) 
+
+
 
 
 
