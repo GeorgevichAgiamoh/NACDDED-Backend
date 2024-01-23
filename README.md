@@ -46,6 +46,8 @@ All values are in string (no date, or int). Not relevant to the frontend enginee
 
 > Endpoints used to create data can also be called to update data
 
+> (,,) means implied
+ 
 Please follow the data structure strictly or an error will be thrown. For error handling:
 
 
@@ -72,6 +74,9 @@ If status prop is false, a message will be included in the message prop indicati
 ```
 
 
+### Notes about GET requests
+
+Remember, the response payload is as described in the JSON above. The actual data is in `pld` 
 
 
 
@@ -156,5 +161,38 @@ pd2 = Permission to write to directory
     "pp2": "required",
     "pm1": "required",
     "pm2": "required",
+}
+```
+
+
+### Create Announcement (POST, setAnnouncements)
+
+``ADMIN``
+
+```json
+{
+    "title":"required",
+    "msg": "required",
+    "time": "required",
+}
+```
+
+### Get Announcement (GET, getAnnouncements)
+
+> See POST method
+
+### Get Highlights (GET, getHighlights)
+
+The info tabs on admin dashboard (first page).
+
+```json
+{
+    "status": "true",
+    "message": "Success",
+    "pld": {
+        "totalUsers":",,",
+        "totalMales":",,",
+        "totalFemales": ",,"
+    },
 }
 ```
