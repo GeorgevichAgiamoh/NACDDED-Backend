@@ -43,6 +43,7 @@ Route::group([
     Route::post('sendMail', [ApiController::class,'sendMail']);
     Route::post('setEvents', [ApiController::class,'setEvents']);
     Route::post('uploadPayment', [ApiController::class,'uploadPayment']);
+    Route::post('setNacddedInfo', [ApiController::class,'setNacddedInfo']);
     
     Route::get('getDioceseBasicInfo', [ApiController::class, 'getDioceseBasicInfo']);
     Route::get('getDioceseGeneralInfo', [ApiController::class, 'getDioceseGeneralInfo']);
@@ -52,6 +53,7 @@ Route::group([
     Route::get('getAnnouncements', [ApiController::class, 'getAnnouncements']);
     Route::get('getEvents', [ApiController::class, 'getEvents']);
     Route::get('getDiocesePayments', [ApiController::class, 'getDiocesePayments']);
+    Route::get('getNacddedInfo', [ApiController::class, 'getNacddedInfo']);
 
     Route::get('getHighlights', [ApiController::class, 'getHighlights']);
     Route::get('getAdmins', [ApiController::class, 'getAdmins']);
@@ -67,7 +69,7 @@ Route::group([
 
 
     
-    Route::post('setAdsiInfo', [ApiController::class,'setAdsiInfo']);
+    //--
 
 
     Route::get('getMemberFinancialInfo/{uid}', [ApiController::class, 'getMemberFinancialInfo']);
@@ -75,7 +77,7 @@ Route::group([
 
     Route::get('getVerificationStats', [ApiController::class, 'getVerificationStats']);
     Route::get('getMembersByV/{vstat}', [ApiController::class, 'getMembersByV']);
-    Route::get('getAsdiInfo', [ApiController::class, 'getAsdiInfo']);
+    
 
     
     Route::get('refresh', [ApiController::class,'refreshToken']);

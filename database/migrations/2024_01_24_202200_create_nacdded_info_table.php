@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('adsi_info', function (Blueprint $table) {
-            $table->string('memid')->primary();
+        Schema::create('nacdded_info', function (Blueprint $table) {
+            $table->string('email')->primary();
             $table->string('cname');
             $table->string('regno');
             $table->text('addr');
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('adsi_info');
+        Schema::dropIfExists('nacdded_info');
     }
 };

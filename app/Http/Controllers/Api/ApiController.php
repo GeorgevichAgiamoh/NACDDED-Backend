@@ -10,6 +10,7 @@ use App\Models\announcements;
 use App\Models\diocese_basic_data;
 use App\Models\diocese_general_data;
 use App\Models\events;
+use App\Models\nacdded_info;
 use App\Models\payment_refs;
 use App\Models\pays0;
 use App\Models\pays1;
@@ -780,6 +781,89 @@ class ApiController extends Controller
         ],401);
     }
 
+    //POST
+    public function setNacddedInfo(Request $request){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            $request->validate([
+                "email"=>"required",
+                "cname"=>"required",
+                "regno"=> "required",
+                "addr"=> "required",
+                "nationality"=>"required",
+                "state"=> "required",
+                "lga"=> "required",
+                "aname"=>"required",
+                "anum"=> "required",
+                "bnk"=> "required",
+                "pname"=>"required",
+                "peml"=> "required",
+                "pphn"=> "required",
+                "paddr"=>"required",
+                
+            ]);
+            nacdded_info::updateOrCreate(
+                ["email"=> $request->email,],
+                [
+                "cname"=> $request->cname,
+                "regno"=> $request->regno,
+                "addr"=> $request->addr,
+                "nationality"=> $request->nationality,
+                "state"=> $request->state,
+                "lga"=> $request->lga,
+                "aname"=> $request->aname,
+                "anum"=> $request->anum,
+                "bnk"=> $request->bnk,
+                "pname"=> $request->pname,
+                "peml"=> $request->peml,
+                "pphn"=> $request->pphn,
+                "paddr"=> $request->paddr,
+            ]);
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "NACDDED Info updated"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //GET
+    public function getNacddedInfo(){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            if(request()->has('email')) {
+                $eml = request()->input('email');
+                $pld = nacdded_info::where('email', $eml)->first();
+                if($pld){
+                    return response()->json([
+                        "status"=> true,
+                        "message"=> "Success",
+                        "pld"=> $pld,
+                    ]);
+                }
+                return response()->json([
+                    "status"=> false,
+                    "message"=> "No Data Yet",
+                ]);
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "Email required",
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);   
+    }
+
+
+
+
 
 
 
@@ -888,78 +972,7 @@ class ApiController extends Controller
 
     
 
-    //POST
-    public function setAdsiInfo(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
-            $request->validate([
-                "memid"=>"required",
-                "cname"=>"required",
-                "regno"=> "required",
-                "addr"=> "required",
-                "nationality"=>"required",
-                "state"=> "required",
-                "lga"=> "required",
-                "aname"=>"required",
-                "anum"=> "required",
-                "bnk"=> "required",
-                "pname"=>"required",
-                "peml"=> "required",
-                "pphn"=> "required",
-                "paddr"=>"required",
-                
-            ]);
-            adsi_info::updateOrCreate(
-                ["memid"=> $request->memid,],
-                [
-                "cname"=> $request->cname,
-                "regno"=> $request->regno,
-                "addr"=> $request->addr,
-                "nationality"=> $request->nationality,
-                "state"=> $request->state,
-                "lga"=> $request->lga,
-                "aname"=> $request->aname,
-                "anum"=> $request->anum,
-                "bnk"=> $request->bnk,
-                "pname"=> $request->pname,
-                "peml"=> $request->peml,
-                "pphn"=> $request->pphn,
-                "paddr"=> $request->paddr,
-            ]);
-            // Respond
-            return response()->json([
-                "status"=> true,
-                "message"=> "ADSI Info updated"
-            ]);
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-    //GET
-    public function getAsdiInfo(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
-            $pld = adsi_info::where('memid', '11111111')->first();
-            if($pld){
-                return response()->json([
-                    "status"=> true,
-                    "message"=> "Success",
-                    "pld"=> $pld,
-                ]);
-            }
-            return response()->json([
-                "status"=> false,
-                "message"=> "No Data Yet",
-            ]);
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);   
-    }
+    
 
     
 

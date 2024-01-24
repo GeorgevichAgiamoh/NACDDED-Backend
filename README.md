@@ -430,3 +430,34 @@ Get all the payments by that Diocese.
     },
 }
 ```
+
+
+### setNacddedInfo (`POST`, setNacddedInfo)
+
+``ADMIN``
+
+```json
+{
+    "email":"required",
+    "cname":"required",
+    "regno": "required",
+    "addr": "required",
+    "nationality":"required",
+    "state": "required",
+    "lga": "required",
+    "aname":"required",
+    "anum": "required",
+    "bnk": "required",
+    "pname":"required",
+    "peml": "required",
+    "pphn": "required",
+    "paddr":"required",
+}
+```
+
+
+### getNacddedInfo (`GET`, getNacddedInfo)
+
+``ADMIN``
+
+> Requires the `email` QP
