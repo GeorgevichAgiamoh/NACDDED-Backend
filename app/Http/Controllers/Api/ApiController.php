@@ -7,13 +7,14 @@ use App\Mail\SSSMails;
 use App\Models\admin_user;
 use App\Models\adsi_info;
 use App\Models\announcements;
-use App\Models\member_basic_data;
-use App\Models\member_financial_data;
-use App\Models\member_general_data;
+use App\Models\diocese_basic_data;
+use App\Models\diocese_general_data;
+use App\Models\events;
 use App\Models\payment_refs;
 use App\Models\pays0;
 use App\Models\pays1;
 use App\Models\pays2;
+use App\Models\secretary_data;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -170,140 +171,7 @@ class ApiController extends Controller
         ]);
     }
 
-    //Profile API (POST)
-    public function setMemberBasicInfo(Request $request){
-        $request->validate([
-            "memid"=>"required",
-            "fname"=> "required",
-            "lname"=> "required",
-            "mname"=> "nullable",
-            "eml"=> "nullable|email",
-            "phn"=> "required",
-            "verif"=> "required",
-            "pay"=> "required",
-        ]);
-        member_basic_data::updateOrCreate(
-            ["memid"=> $request->memid,],
-            [
-            "fname"=> $request->fname,
-            "lname"=> $request->lname,
-            "mname"=> $request->mname,
-            "eml"=> $request->eml,
-            "phn"=> $request->phn,
-            "verif"=> $request->verif,
-            'pay'=> $request->pay,
-        ]);
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Member Basic Info updated"
-        ]);
-    }
 
-
-    public function getMemberBasicInfo($uid){
-        
-        $pld = member_basic_data::where("memid", $uid)->first();
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Member Basic Info retrieved",
-            "pld"=> $pld,
-        ]);
-    }
-
-
-    //Profile API (POST)
-    public function setMemberGeneralInfo(Request $request){
-        $request->validate([
-            "memid"=>"required",
-            "sex"=> "required",
-            "marital"=> "required",
-            "dob"=> "required",
-            "nationality"=> "required",
-            "state"=> "required",
-            "lga"=> "required",
-            "town"=> "required",
-            "addr"=> "required",
-            "job"=> "required",
-            "nin"=> "required",
-            "kin_fname"=> "required",
-            "kin_lname"=> "required",
-            "kin_mname"=> "nullable",
-            "kin_type"=> "required",
-            "kin_phn"=> "required",
-            "kin_addr"=> "required",
-            "kin_eml"=> "required",
-        ]);
-        member_general_data::updateOrCreate(
-            ["memid"=> $request->memid,],
-            [
-            "sex"=> $request->sex,
-            "marital"=> $request->marital,
-            "dob"=> $request->dob,
-            "nationality"=> $request->nationality,
-            "state"=> $request->state,
-            "lga"=> $request->lga,
-            "town"=> $request->town,
-            "addr"=> $request->addr,
-            "job"=> $request->job,
-            "nin"=> $request->nin,
-            "kin_fname"=> $request->kin_fname,
-            "kin_lname"=> $request->kin_lname,
-            "kin_mname"=> $request->kin_mname,
-            "kin_type"=> $request->kin_type,
-            "kin_phn"=> $request->kin_phn,
-            "kin_addr"=> $request->kin_addr,
-            "kin_eml"=> $request->kin_eml
-        ]);
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Membert General Info updated"
-        ]);
-    }
-
-    public function getMemberGeneralInfo($uid){
-        $pld = member_general_data::where("memid","=", $uid)->first();
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Membert General Info retrieved",
-            "pld"=> $pld,
-        ]);
-    }
-    
-
-    public function setMemberFinancialInfo(Request $request){
-        $request->validate([
-            "memid"=>"required",
-            "bnk"=> "required",
-            "anum"=> "required",
-            "aname"=> "required",
-        ]);
-        member_financial_data::updateOrCreate(
-            ["memid"=> $request->memid,],
-            [
-            "bnk"=> $request->bnk,
-            "anum"=> $request->anum,
-            "aname"=> $request->aname,
-        ]);
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Success"
-        ]);
-    }
-
-    public function getMemberFinancialInfo($uid){
-        $pld = member_financial_data::where("memid","=", $uid)->first();
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Success",
-            "pld"=> $pld,
-        ]);
-    }
 
     //GET
     public function getAnnouncements(){
@@ -315,33 +183,6 @@ class ApiController extends Controller
             "pld"=> $pld,
         ]);
     }
-
-    //GET
-    public function getMemPays($memid){
-        $shares = pays2::where('memid', $memid)->get();
-        $dues = pays1::where('memid', $memid)->get();
-        $pld = [
-            's'=> $shares,
-            'd'=> $dues,
-        ];
-        return response()->json([
-            "status"=> true,
-            "message"=> "Success",
-            "pld"=> $pld,
-        ]);  
-    }
-
-    //GET
-    public function getMemDuesByYear($memid, $year){
-        $dues = pays1::where('memid', $memid)->where('year', $year)->first();
-        return response()->json([
-            "status"=> true,
-            "message"=> "Success",
-            "pld"=> $dues,
-        ]);  
-    }
-
-    //Files
 
     //POST (FILES)
     public function uploadFile(Request $request){
@@ -381,6 +222,8 @@ class ApiController extends Controller
         }
     }
 
+    
+
     //GET (FILE)
     public function fileExists($folder,$filename){
         $filePath = public_path('uploads/'.$folder.'/'.$filename);
@@ -396,6 +239,162 @@ class ApiController extends Controller
             ]);
         }
     }
+
+    //GET
+    public function getEvents(){
+        $count = 0;
+        if(request()->has('count')) {
+            $count = request()->input('count');
+        }
+        $pld = null;
+        if($count == 0){
+            $pld = events::all();
+        }else{
+            $pld = events::latest()->take($count)->get();
+        }
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);
+    }
+
+    //Profile API (POST)
+    public function setDioceseBasicInfo(Request $request){
+        $request->validate([
+            "email"=>"required|email",
+            "name"=> "required",
+            "phn"=> "required",
+            "pwd"=> "required",
+        ]);
+        $usr = User::where("email", $request->email)->first();
+        if($usr){
+            $usr->update([
+                "password"=>bcrypt($request->pwd),
+            ]);            
+            diocese_basic_data::updateOrCreate(
+                ["email"=> $request->email,],
+                [
+                "name"=> $request->name,
+                "phn"=> $request->phn,
+                "pwd"=> $request->pwd,
+            ]);
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success. Please login again"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "The email does not exist"
+        ]);
+    }
+
+
+    //GET
+    public function getDioceseBasicInfo(){
+        if(request()->has('email')) {
+            $eml = request()->input('email');
+            $pld = diocese_basic_data::where("email", $eml)->first();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld,
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Email required",
+        ]);
+    }
+
+
+    //Profile API (POST)
+    public function setDioceseGeneralInfo(Request $request){
+        $request->validate([
+            "email"=>"required",
+            "state"=> "required",
+            "lga"=> "required",
+            "addr"=> "required",
+        ]);
+        diocese_general_data::updateOrCreate(
+            ["email"=> $request->email,],
+            [
+            "state"=> $request->state,
+            "lga"=> $request->lga,
+            "addr"=> $request->addr,
+        ]);
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success"
+        ]);
+    }
+
+    public function getDioceseGeneralInfo(){
+        if(request()->has('email')) {
+            $eml = request()->input('email');
+            $pld = diocese_general_data::where("email", $eml)->first();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld,
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Email required",
+        ]);
+    }
+
+
+    public function setSecretaryInfo(Request $request){
+        $request->validate([
+            "email"=>"required",
+            "fname"=> "required",
+            "lname"=> "required",
+            "mname"=> "required",
+            "sex"=> "required",
+            "phn"=> "required",
+            "addr"=> "required",
+        ]);
+        secretary_data::updateOrCreate(
+            ["email"=> $request->email,],
+            [
+            "fname"=> $request->fname,
+            "lname"=> $request->lname,
+            "mname"=> $request->mname,
+            "sex"=> $request->sex,
+            "phn"=> $request->phn,
+            "addr"=> $request->addr,
+        ]);
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success"
+        ]);
+    }
+
+    public function getSecretaryInfo(){
+        if(request()->has('email')) {
+            $eml = request()->input('email');
+            $pld = secretary_data::where("email", $eml)->first();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld,
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Email required",
+        ]);
+    }
+
+
+
+
 
 
     //--------------- ADMIN CODES
@@ -511,6 +510,247 @@ class ApiController extends Controller
             "message"=> "Access denied"
         ],401);
     }
+
+     //GET
+     public function getAdmins(){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            $pld = admin_user::all();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //GET
+    public function getAdmin($adminId){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null) { //Granted to all admin as is needed on first page
+            $pld = admin_user::where('memid', $adminId)->first();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //POST
+    public function setAdmin(Request $request){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            $request->validate([
+                "memid"=>"required",
+                "lname"=>"required",
+                "oname"=> "required",
+                "eml"=> "required",
+                "role"=>"required",
+                "pd1"=> "required",
+                "pd2"=> "required",
+                "pw1"=> "required",
+                "pw2"=> "required",
+                "pp1"=>"required",
+                "pp2"=> "required",
+                "pm1"=> "required",
+                "pm2"=>"required",
+            ]);
+            admin_user::updateOrCreate(
+                ["memid"=> $request->memid,],
+                [
+                "lname"=> $request->lname,
+                "oname"=> $request->oname,
+                "eml"=> $request->eml,
+                "role"=> $request->role,
+                "pd1"=> $request->pd1,
+                "pd2"=> $request->pd2,
+                "pw1"=> $request->pw1,
+                "pw2"=> $request->pw2,
+                "pp1"=> $request->pp1,
+                "pp2"=> $request->pp2,
+                "pm1"=> $request->pm1,
+                "pm2"=> $request->pm2,
+            ]);
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Admin Added"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //GET
+    public function removeAdmin($adminId){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null && $role=='0') {
+            $dels = admin_user::where('memid', $adminId)->delete();
+            if($dels>0){
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                ]);  
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "Nothing to delete"
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //POST 
+    public function sendMail(Request $request){
+        $pd2 = auth()->payload()->get('pd2');
+        if ( $pd2!=null  && $pd2=='1') { //Can write to dir
+            $request->validate([
+                "name"=>"required",
+                "email"=>"required",
+                "subject"=>"required",
+                "body"=> "required",
+            ]);
+            $data = [
+                'name' => $request->name,
+                'subject' => $request->subject,
+                'body' => $request->body,
+            ];
+        
+            Mail::to($request->email)->send(new SSSMails($data));
+            
+            return response()->json([
+                "status"=> true,
+                "message"=> "Mailed Successfully",
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    //POST
+    public function setEvents(Request $request){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+              $request->validate([
+                "title"=>"required",
+                "time"=> "required",
+                "venue"=> "required",
+                "fee"=> "required",
+            ]);
+            events::create([
+                "title"=> $request->title,
+                "time"=> $request->time,
+                "venue"=> $request->venue,
+                "fee"=> $request->fee,
+            ]);
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Event Added"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+    
+
+    //GET
+    public function getMemPays($memid){
+        $shares = pays2::where('memid', $memid)->get();
+        $dues = pays1::where('memid', $memid)->get();
+        $pld = [
+            's'=> $shares,
+            'd'=> $dues,
+        ];
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);  
+    }
+
+    //GET
+    public function getMemDuesByYear($memid, $year){
+        $dues = pays1::where('memid', $memid)->where('year', $year)->first();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $dues,
+        ]);  
+    }
+
+    //Files
+
+    
+
+    
+
+    //-- ADMIN
 
     //GET 
     public function getVerificationStats(){
@@ -716,137 +956,11 @@ class ApiController extends Controller
         ],401);   
     }
 
-     //GET
-     public function getAdmins(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
-            $pld = admin_user::all();
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
+    
 
-    //GET
-    public function getAdmin($adminId){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null) { //Granted to all admin as is needed on first page
-            $pld = admin_user::where('memid', $adminId)->first();
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
+    
 
-    //POST
-    public function setAdmin(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
-            $request->validate([
-                "memid"=>"required",
-                "lname"=>"required",
-                "oname"=> "required",
-                "eml"=> "required",
-                "role"=>"required",
-                "pd1"=> "required",
-                "pd2"=> "required",
-                "pw1"=> "required",
-                "pw2"=> "required",
-                "pp1"=>"required",
-                "pp2"=> "required",
-                "pm1"=> "required",
-                "pm2"=>"required",
-            ]);
-            admin_user::updateOrCreate(
-                ["memid"=> $request->memid,],
-                [
-                "lname"=> $request->lname,
-                "oname"=> $request->oname,
-                "eml"=> $request->eml,
-                "role"=> $request->role,
-                "pd1"=> $request->pd1,
-                "pd2"=> $request->pd2,
-                "pw1"=> $request->pw1,
-                "pw2"=> $request->pw2,
-                "pp1"=> $request->pp1,
-                "pp2"=> $request->pp2,
-                "pm1"=> $request->pm1,
-                "pm2"=> $request->pm2,
-            ]);
-            // Respond
-            return response()->json([
-                "status"=> true,
-                "message"=> "Admin Added"
-            ]);
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-    //GET
-    public function removeAdmin($adminId){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null && $role=='0') {
-            $dels = admin_user::where('memid', $adminId)->delete();
-            if($dels>0){
-                return response()->json([
-                    "status"=> true,
-                    "message"=> "Success",
-                ]);  
-            }
-            return response()->json([
-                "status"=> false,
-                "message"=> "Nothing to delete"
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-    //POST 
-    public function sendMail(Request $request){
-        $pd2 = auth()->payload()->get('pd2');
-        if ( $pd2!=null  && $pd2=='1') { //Can write to dir
-            $request->validate([
-                "name"=>"required",
-                "email"=>"required",
-                "subject"=>"required",
-                "body"=> "required",
-            ]);
-            $data = [
-                'name' => $request->name,
-                'subject' => $request->subject,
-                'body' => $request->body,
-            ];
-        
-            Mail::to($request->email)->send(new SSSMails($data));
-            
-            return response()->json([
-                "status"=> true,
-                "message"=> "Mailed Successfully",
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
+    
 
 
     

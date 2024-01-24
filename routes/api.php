@@ -31,36 +31,50 @@ Route::post('paystackConf', [ApiController::class,'paystackConf']);
 Route::group([
     'middleware'=> ['auth:api'],
 ], function(){
-    Route::post('setMemberBasicInfo', [ApiController::class,'setMemberBasicInfo']);
-    Route::post('setMemberGeneralInfo', [ApiController::class,'setMemberGeneralInfo']);
-    Route::post('setMemberFinancialInfo', [ApiController::class,'setMemberFinancialInfo']);
+    Route::post('setDioceseBasicInfo', [ApiController::class,'setDioceseBasicInfo']);
+    Route::post('setDioceseGeneralInfo', [ApiController::class,'setDioceseGeneralInfo']);
+    Route::post('setSecretaryInfo', [ApiController::class,'setSecretaryInfo']);
     Route::post('authAsAdmin', [ApiController::class,'authAsAdmin']);
     Route::post('uploadFile', [ApiController::class,'uploadFile']);
 
     Route::post('setAdminUserInfo', [ApiController::class,'setAdminUserInfo']);
     Route::post('setAnnouncements', [ApiController::class,'setAnnouncements']);
-    Route::post('uploadPayment', [ApiController::class,'uploadPayment']);
-    Route::post('setAdsiInfo', [ApiController::class,'setAdsiInfo']);
     Route::post('setAdmin', [ApiController::class,'setAdmin']);
     Route::post('sendMail', [ApiController::class,'sendMail']);
+    Route::post('setEvents', [ApiController::class,'setEvents']);
     
-    Route::get('getMemberBasicInfo/{uid}', [ApiController::class, 'getMemberBasicInfo']);
-    Route::get('getMemberGeneralInfo/{uid}', [ApiController::class, 'getMemberGeneralInfo']);
-    Route::get('getMemberFinancialInfo/{uid}', [ApiController::class, 'getMemberFinancialInfo']);
-    Route::get('getMemPays/{memid}', [ApiController::class, 'getMemPays']);
-    Route::get('getMemDuesByYear/{memid}/{year}', [ApiController::class, 'getMemDuesByYear']);
+    Route::get('getDioceseBasicInfo', [ApiController::class, 'getDioceseBasicInfo']);
+    Route::get('getDioceseGeneralInfo', [ApiController::class, 'getDioceseGeneralInfo']);
+    Route::get('getSecretaryInfo', [ApiController::class, 'getSecretaryInfo']);
     Route::get('getFile/{folder}/{filename}', [ApiController::class, 'getFile']);
     Route::get('fileExists/{folder}/{filename}', [ApiController::class, 'fileExists']);
     Route::get('getAnnouncements', [ApiController::class, 'getAnnouncements']);
+    Route::get('getEvents', [ApiController::class, 'getEvents']);
 
     Route::get('getHighlights', [ApiController::class, 'getHighlights']);
+    Route::get('getAdmins', [ApiController::class, 'getAdmins']);
+    Route::get('getAdmin/{adminId}', [ApiController::class, 'getAdmin']);
+    Route::get('removeAdmin/{adminId}', [ApiController::class, 'removeAdmin']);
+
+
+
+
+    //TODO Remove ---OLD 
+    Route::post('setMemberFinancialInfo', [ApiController::class,'setMemberFinancialInfo']);
+
+
+    Route::post('uploadPayment', [ApiController::class,'uploadPayment']);
+    Route::post('setAdsiInfo', [ApiController::class,'setAdsiInfo']);
+
+
+    Route::get('getMemberFinancialInfo/{uid}', [ApiController::class, 'getMemberFinancialInfo']);
+    Route::get('getMemPays/{memid}', [ApiController::class, 'getMemPays']);
+    Route::get('getMemDuesByYear/{memid}/{year}', [ApiController::class, 'getMemDuesByYear']);
+
     Route::get('getVerificationStats', [ApiController::class, 'getVerificationStats']);
     Route::get('getMembersByV/{vstat}', [ApiController::class, 'getMembersByV']);
     Route::get('getPayments/{payId}', [ApiController::class, 'getPayments']);
     Route::get('getAsdiInfo', [ApiController::class, 'getAsdiInfo']);
-    Route::get('getAdmins', [ApiController::class, 'getAdmins']);
-    Route::get('getAdmin/{adminId}', [ApiController::class, 'getAdmin']);
-    Route::get('removeAdmin/{adminId}', [ApiController::class, 'removeAdmin']);
 
     
     Route::get('refresh', [ApiController::class,'refreshToken']);

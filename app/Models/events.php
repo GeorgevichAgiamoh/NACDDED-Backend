@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class member_financial_data extends Model
+class events extends Model
 {
-    protected $table = 'member_financial_data'; 
-    protected $primaryKey = 'memid';
+    protected $table = 'events'; 
     protected $fillable = [
-        'memid', 'bnk', 'anum','aname'
+        'title','time', 'venue', 'fee'
     ];
     /*protected $hidden = [
         'password',

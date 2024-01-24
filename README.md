@@ -15,19 +15,20 @@ Started: 22/1/24
 
 > Setting up authentication REST API (DONE)
 
-> User data upload endpoint (~)
+> User data upload endpoint (DONE)
 
-> Testing (~)
+> Testing (DONE)
 
-> Provisioning admin (~)
+> Provisioning admin (DONE)
+
+> Sending Mails (DONE) 
 
 > Building more endpoints (~)
 
-> Sending Mails (~) 
-
-> Optimizing ( ~ )
+> Optimizing (~)
 
 > Messaging (~)
+
 
 
 
@@ -47,6 +48,10 @@ All values are in string (no date, or int). Not relevant to the frontend enginee
 > Endpoints used to create data can also be called to update data
 
 > (,,) means implied
+
+> For ids (like memid and adminId) please pass email instead. Though its still in debate if an ID system will be in place
+
+> QP means query param
  
 Please follow the data structure strictly or an error will be thrown. For error handling:
 
@@ -74,7 +79,7 @@ If status prop is false, a message will be included in the message prop indicati
 ```
 
 
-### Notes about GET requests
+### Notes about `GET` requests
 
 Remember, the response payload is as described in the JSON above. The actual data is in `pld` 
 
@@ -96,6 +101,64 @@ While you can call `UNPROTECTED` endpoints without authentication, you will need
 
 
 
+## Files
+
+All files are stored in the public/upload dir
+
+
+### Upload File (`POST`, uploadFile)
+
+```json
+{
+    "file" : "required", //|mimes:jpeg,png,jpg,gif,svg|max:2048
+    "filename" : "required",
+    "folder" : "required",
+}
+```
+
+
+### Get file (`GET`, getFile)
+
+This should just be a link you pass to something like an `a` tag. Construct the link as:
+
+{root}/{foldername}/{filename}
+
+`foldername` & `filename` are those you provided when uploading the file.
+
+
+### Check whether file exists (`GET`, fileExists)
+
+Same logic as abov, except this endpoint returns a json so you should call it as a REST API. A successful response will be:
+
+```json
+{
+    "status" : true,
+    "message" : "Yes, it does",
+}
+```
+
+
+
+
+## Emails
+
+> Only admin accounts can send emails
+
+You can send emails using:
+
+### Send Email endpoint (`POST`, sendMail)
+
+The actual email template has been designed with php blade. But you can control what it says with the payload structure:
+
+```json
+{
+    "name":"required",
+    "email":"required",
+    "subject":"required",
+    "body": "required",
+}
+```
+
 
 
 ## Data Structure
@@ -106,7 +169,7 @@ While you can call `UNPROTECTED` endpoints without authentication, you will need
 No auth required to access these endpoints
 
 
-### Register (POST, register)
+### Register (`POST`, register)
 
 ```json
 {
@@ -117,7 +180,7 @@ No auth required to access these endpoints
 
 
 
-### Login (POST, login)
+### Login (`POST`, login)
 
 ```json
 {
@@ -133,7 +196,7 @@ No auth required to access these endpoints
 
 
 
-### Admin Auth (POST, authAsAdmin)
+### Admin Auth (`POST`, authAsAdmin)
 
 This endpoint requires no payload. To authenticate an admin, you must call this endpoint after you call the `login` endpoint. Once called, we will verify the user is an admin using info from the `token` and add more claims to the token to control his/her access. 
 
@@ -141,7 +204,9 @@ This endpoint requires no payload. To authenticate an admin, you must call this 
 
 
 
-### Create Admin (POST, setAdmin)
+### Create Admin (`POST`, setAdmin)
+
+``ADMIN``
 
 pd1 = Permission to read from Directory
 pd2 = Permission to write to directory
@@ -164,8 +229,27 @@ pd2 = Permission to write to directory
 }
 ```
 
+Of course a first admin needs to exists. To create it just ``POST`` to `setFirstAdminUserInfo` endpoint. No need to pass any param. Ps. its an unprotected endpoint so no need to token. You can call it from postman.
 
-### Create Announcement (POST, setAnnouncements)
+
+### Get Admin(s) (`GET`, getAdmin(s))
+
+Use `getAdmin` for single admin or `getAdmins` for all admins. If using `getAdmin` include the adminId `path param`
+
+{root}/getAdmin/{adminId} OR {root}/getAdmins
+
+
+
+### Remove an admin (`GET`, removeAdmin)
+
+``ADMIN``
+
+`GET` the endpoint:
+
+{root}/removeAdmin/{adminID}
+
+
+### Create Announcement (`POST`, setAnnouncements)
 
 ``ADMIN``
 
@@ -177,11 +261,13 @@ pd2 = Permission to write to directory
 }
 ```
 
-### Get Announcement (GET, getAnnouncements)
+### Get Announcement (`GET`, getAnnouncements)
 
-> See POST method
+> See `POST` method
 
-### Get Highlights (GET, getHighlights)
+
+
+### Get Highlights (`GET`, getHighlights)
 
 The info tabs on admin dashboard (first page).
 
@@ -196,3 +282,84 @@ The info tabs on admin dashboard (first page).
     },
 }
 ```
+
+
+
+### Create Event (`POST`, setEvents)
+
+``ADMIN``
+
+```json
+{
+    "title":"required",
+    "time": "required",
+    "venue": "required",
+    "fee": "required",
+}
+```
+
+
+### Get Events (`GET`, getEvents)
+
+If you want to get all events, call this endpoint without any payload. Alternatively, you can limit the result returned by passing a `count` query parameter.
+
+> The `count` is a ``query`` parameter and must be a positive integer
+
+
+### setDioceseBasicInfo (`POST`, setDioceseBasicInfo)
+
+This is a sensitive endpoint. You must re-login immediately after calling it.
+
+```json
+{
+    "email":"required|email",
+    "name": "required",
+    "phn": "required",
+    "pwd": "required",
+}
+```
+
+> The `email` must exist as a registered user.
+
+
+### getDioceseBasicInfo (`GET`, getDioceseBasicInfo)
+
+Requires `email` QP
+
+
+
+### setDioceseGeneralInfo (`POST`, setDioceseGeneralInfo)
+
+```json
+{
+    "email":"required",
+    "state": "required",
+    "lga": "required",
+    "addr": "required",
+}
+```
+
+### getDioceseGeneralInfo (`GET`, getDioceseGeneralInfo)
+
+Requires `email` QP
+
+
+
+
+### setSecretaryInfo (`POST`, setSecretaryInfo)
+
+```json
+{
+    "email":"required",
+    "fname": "required",
+    "lname": "required",
+    "mname": "required",
+    "sex": "required",
+    "phn": "required",
+    "addr": "required",
+}
+```
+
+### getSecretaryInfo (`GET`, getSecretaryInfo)
+
+Requires `email` QP
