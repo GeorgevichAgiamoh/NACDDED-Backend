@@ -680,12 +680,18 @@ class ApiController extends Controller
                 "time"=> "required",
                 "venue"=> "required",
                 "fee"=> "required",
+                "start"=> "required",
+                "end"=> "required",
+                "theme"=> "required",
             ]);
             events::create([
                 "title"=> $request->title,
                 "time"=> $request->time,
                 "venue"=> $request->venue,
                 "fee"=> $request->fee,
+                "start"=> $request->start,
+                "end"=> $request->end,
+                "theme"=> $request->theme,
             ]);
             // Respond
             return response()->json([

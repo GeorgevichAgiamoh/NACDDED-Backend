@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('time');
             $table->text('venue');
             $table->string('fee');
+            $table->string('start');
+            $table->string('end');
+            $table->text('theme');
             $table->timestamps();
         });
     }

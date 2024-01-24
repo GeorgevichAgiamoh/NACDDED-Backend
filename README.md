@@ -311,6 +311,9 @@ The info tabs on admin dashboard (first page).
     "time": "required",
     "venue": "required",
     "fee": "required",
+    "start": "required",
+    "end": "required",
+    "theme": "required",
 }
 ```
 
