@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('phn');
             $table->string('pwd');
+            $table->string('verif');
             $table->timestamps();
         });
     }

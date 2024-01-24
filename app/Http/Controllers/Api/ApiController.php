@@ -13,7 +13,6 @@ use App\Models\events;
 use App\Models\payment_refs;
 use App\Models\pays0;
 use App\Models\pays1;
-use App\Models\pays2;
 use App\Models\secretary_data;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -84,9 +83,7 @@ class ApiController extends Controller
 
     //Paystack Webhook (POST, formdata)
     public function paystackConf(Request $request){ 
-        Log::info('Paystack hooked ' . json_encode($request->all()));
-        $secret = 'sk_test_b3a8e08803d112049764495a5e08168d6514785f';
-        $computedHash = hash_hmac('sha512', $request->getContent(), $secret);// Dont use json_encode($request->all()) in hashing
+        $computedHash = hash_hmac('sha512', $request->getContent(), getenv('PAYSTACK_SECRET'));// Dont use json_encode($request->all()) in hashing
         if ($computedHash == $request->header('x-paystack-signature')) {
             $payload = json_decode($request->getContent(), true);
             if($payload['event'] == "charge.success"){
@@ -104,22 +101,19 @@ class ApiController extends Controller
                             "time"=> $tm,
                         ]);
                         $upl = [
-                            "memid"=>$payinfo[3],
+                            "email"=>$payinfo[3],
                             "ref"=> $ref,
                             "name"=> $nm,
                             "time"=> $tm,
                         ];
                         if($payinfo[1]=='0'){
-                            pays0::create($upl);
-                            member_basic_data::where("memid", $payinfo[3])->update(['pay' => '1']);
-                        }else if ($payinfo[1]=='1'){
                             $yr = $payload['data']['metadata']['year'];
                             $upl['year'] = $yr;
+                            pays0::create($upl);
+                        }else{ // ie 1
+                            $ev = $payload['data']['metadata']['event'];
+                            $upl['event'] = $ev;
                             pays1::create($upl);
-                        }else{ // ie 2
-                            $sh = $payload['data']['metadata']['shares'];
-                            $upl['shares'] = $sh;
-                            pays2::create($upl);
                         }
                         Log::info('SUCCESS');
                     }else{
@@ -267,6 +261,7 @@ class ApiController extends Controller
             "name"=> "required",
             "phn"=> "required",
             "pwd"=> "required",
+            "verif"=> "required",
         ]);
         $usr = User::where("email", $request->email)->first();
         if($usr){
@@ -279,6 +274,7 @@ class ApiController extends Controller
                 "name"=> $request->name,
                 "phn"=> $request->phn,
                 "pwd"=> $request->pwd,
+                "verif"=> $request->verif,
             ]);
             return response()->json([
                 "status"=> true,
@@ -392,6 +388,38 @@ class ApiController extends Controller
         ]);
     }
 
+    //GET
+    public function getDiocesePayments(){
+        if(request()->has('email')) {
+            $eml = request()->input('email');
+            $events = pays1::where('email', $eml)->get();
+            $dues = pays0::where('email', $eml)->get();
+            $pld = [
+                'e'=> $events,
+                'd'=> $dues,
+            ];
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld,
+            ]);  
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Email required",
+        ]);
+    }
+
+    //GET
+    public function getMemDuesByYear($memid, $year){
+        $dues = pays1::where('memid', $memid)->where('year', $year)->first();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $dues,
+        ]);  
+    }
+
 
 
 
@@ -466,16 +494,16 @@ class ApiController extends Controller
     public function getHighlights(){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
-            $totalUsers = User::count();
-            $totalMales = member_general_data::where('sex', 'M')->count();
-            $totalFemales = member_general_data::where('sex', 'F')->count();
+            // $totalUsers = User::count();
+            // $totalMales = diocese_general_data::where('sex', 'M')->count();
+            // $totalFemales = member_general_data::where('sex', 'F')->count();
             return response()->json([
                 "status"=> true,
                 "message"=> "Success",
                 "pld"=> [
-                    'totalUsers'=>$totalUsers,
-                    'totalMales'=>$totalMales,
-                    'totalFemales'=> $totalFemales
+                    'totalUsers'=>'...',
+                    'totalMales'=>'...',
+                    'totalFemales'=> '...'
                 ],
             ]);   
         }
@@ -671,83 +699,127 @@ class ApiController extends Controller
         ],401);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-    
-    
-
-    //GET
-    public function getMemPays($memid){
-        $shares = pays2::where('memid', $memid)->get();
-        $dues = pays1::where('memid', $memid)->get();
-        $pld = [
-            's'=> $shares,
-            'd'=> $dues,
-        ];
+    //POST
+    public function uploadPayment(Request $request){ 
+        $pp2 = auth()->payload()->get('pp2');
+        if ( $pp2!=null  && $pp2=='1') {
+            $request->validate([
+                "ref"=> "required",
+                "name"=> "required",
+                "time"=> "required",
+            ]);
+            $ref = $request->ref;
+            $payinfo = explode('-',$ref);
+            $amt = $payinfo[2];
+            $nm = $request->name; 
+            $tm = $request->time; 
+            /*payment_refs::create([ DONT INCLUDE SINCE CUSTOM RECORDS NOT ON PAYSTACK
+                "ref"=> $ref,
+                "amt"=> $amt,
+                "time"=> $tm,
+            ]);*/
+            $upl = [
+                "email"=>$payinfo[3],
+                "ref"=> $ref,
+                "name"=> $nm,
+                "time"=> $tm,
+            ];
+            if($payinfo[1]=='0'){
+                $yr = $request->year;
+                $upl['year'] = $yr;
+                pays0::create($upl);
+            }else{ // ie 2
+                $ev = $request->event;
+                $upl['event'] = $ev;
+                pays1::create($upl);
+            }
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success"
+            ]);
+        }
         return response()->json([
-            "status"=> true,
-            "message"=> "Success",
-            "pld"=> $pld,
-        ]);  
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
     }
 
-    //GET
-    public function getMemDuesByYear($memid, $year){
-        $dues = pays1::where('memid', $memid)->where('year', $year)->first();
+     //GET
+     public function getPayments($payId){
+        $pp1 = auth()->payload()->get('pp1');
+        if ( $pp1!=null  && $pp1=='1') { //Can read from dir
+            $start = 0;
+            $count = 20;
+            if(request()->has('start') && request()->has('count')) {
+                $start = request()->input('start');
+                $count = request()->input('count');
+            }
+            $pld = null;
+            if( $payId=='0' ){
+                $pld = pays0::take($count)->skip($start)->get();
+            }
+            if( $payId=='1' ){
+                $pld = pays1::take($count)->skip($start)->get();
+            }
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld
+            ]);   
+        }
         return response()->json([
-            "status"=> true,
-            "message"=> "Success",
-            "pld"=> $dues,
-        ]);  
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
     }
 
-    //Files
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     
+    
 
+    
     
 
     //-- ADMIN
@@ -808,80 +880,7 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
-    public function uploadPayment(Request $request){ 
-        $pp2 = auth()->payload()->get('pp2');
-        if ( $pp2!=null  && $pp2=='1') {
-            $request->validate([
-                "ref"=> "required",
-                "name"=> "required",
-                "time"=> "required",
-            ]);
-            $ref = $request->ref;
-            $payinfo = explode('-',$ref);
-            $amt = $payinfo[2];
-            $nm = $request->name; 
-            $tm = $request->time; 
-            /*payment_refs::create([ DONT INCLUDE SINCE CUSTOM RECORDS NOT ON PAYSTACK
-                "ref"=> $ref,
-                "amt"=> $amt,
-                "time"=> $tm,
-            ]);*/
-            $upl = [
-                "memid"=>$payinfo[3],
-                "ref"=> $ref,
-                "name"=> $nm,
-                "time"=> $tm,
-            ];
-            if($payinfo[1]=='0'){
-                pays0::create($upl);
-                member_basic_data::where("memid", $payinfo[3])->update(['pay' => '1']);
-            }else if ($payinfo[1]=='1'){
-                $yr = $request->year;
-                $upl['year'] = $yr;
-                pays1::create($upl);
-            }else{ // ie 2
-                $sh = $request->shares;
-                $upl['shares'] = $sh;
-                pays2::create($upl);
-            }
-            // Respond
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success"
-            ]);
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-     //GET
-     public function getPayments($payId){
-        $pp1 = auth()->payload()->get('pp1');
-        if ( $pp1!=null  && $pp1=='1') { //Can read from dir
-            $pld = null;
-            if( $payId=='0' ){
-                $pld = pays0::all();
-            }
-            if( $payId=='1' ){
-                $pld = pays1::all();
-            }
-            if( $payId=='2' ){
-                $pld = pays2::all();
-            }
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
+    
 
     //POST
     public function setAdsiInfo(Request $request){

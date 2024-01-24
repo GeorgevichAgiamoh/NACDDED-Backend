@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::create('pays0', function (Blueprint $table) {
             $table->id();
-            $table->string('memid');
+            $table->string('email');
             $table->string('ref');
             $table->string('name');
             $table->string('time');
+            $table->string('event');
             $table->timestamps();
         });
     }

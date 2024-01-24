@@ -37,21 +37,23 @@ Started: 22/1/24
 
 All values are in string (no date, or int). Not relevant to the frontend engineer but short values are `string` while long ones are `text`.
 
-> Date is strored as milliseconds since epoch (again, in string). This includes info like DOB
+- Date is strored as milliseconds since epoch (again, in string). This includes info like DOB
 
-> Passwords are encrypted. Authentication is through JWT.
+- Passwords are encrypted. Authentication is through JWT.
 
-> There are no nested JSON.
+- There are no nested JSON.
 
-> Some props have values of 0/1 (this means NO and YES rsp.)
+- Some props have values of 0/1 (this means NO and YES rsp.)
 
-> Endpoints used to create data can also be called to update data
+- Endpoints used to create data can also be called to update data
 
-> (,,) means implied
+- (,,) means implied
 
-> For ids (like memid and adminId) please pass email instead. Though its still in debate if an ID system will be in place
+- For ids (like memid and adminId) please pass email instead. Though its still in debate if an ID system will be in place
 
-> QP means query param
+- QP means query param
+
+- All data include the `created_at` and `updated_at` prop (UTC date). For instance, you can use it to get the date of initial registration 
  
 Please follow the data structure strictly or an error will be thrown. For error handling:
 
@@ -158,6 +160,18 @@ The actual email template has been designed with php blade. But you can control 
     "body": "required",
 }
 ```
+
+
+## Payments
+
+Every payment has a `ref`. You must provide this reference either to this server when creating manual payment record, or you provide it to paystack (paystack will pass it to this server after user makes payment). The `ref` has a strict structure:
+
+nacdded-(payId)-(amt)-(email)-(mills)
+
+- `payId` is the type of payment. 0 for annual dues, 1 for events
+
+- `mills` is milliseconds since epoch. It can be anything as long as its unique. Also, you may use it as that particular payment record id 
+
 
 
 
@@ -271,14 +285,16 @@ Use `getAdmin` for single admin or `getAdmins` for all admins. If using `getAdmi
 
 The info tabs on admin dashboard (first page).
 
+> Still under dev
+
 ```json
 {
     "status": "true",
     "message": "Success",
     "pld": {
         "totalUsers":",,",
-        "totalMales":",,",
-        "totalFemales": ",,"
+        "totalSchools":",,",
+        "totalDiocese": ",,"
     },
 }
 ```
@@ -310,12 +326,15 @@ If you want to get all events, call this endpoint without any payload. Alternati
 
 This is a sensitive endpoint. You must re-login immediately after calling it.
 
+> The `verif` prop has value 0/1 and it tells if that user has been verified.
+
 ```json
 {
     "email":"required|email",
     "name": "required",
     "phn": "required",
     "pwd": "required",
+    "verif":"required",
 }
 ```
 
@@ -363,3 +382,48 @@ Requires `email` QP
 ### getSecretaryInfo (`GET`, getSecretaryInfo)
 
 Requires `email` QP
+
+
+
+### Upload Payment Record (`POST`, uploadPayment)
+
+``ADMIN``
+
+For manually uploading records. 
+
+```json
+{
+    "ref": "required",
+    "name": "required",
+    "time": "required",
+    "year": "optional - for annual dues only",
+    "event": "optional - for events only - pass EVENT-ID",
+}
+```
+
+
+### Get Payment records (`GET`, getPayments)
+
+Requires `payId` path parameter: getPayments/{payId}
+
+Limit the no. of records retrieved with the `start` and `count` query params (integer). `start` specifies start index and `count` limits the result. If you dont provide it, the endpoint will return only the first 20 records 
+
+
+
+
+### getDiocesePayments (GET, getDiocesePayments)
+
+> Requires the `email` QP
+
+Get all the payments by that Diocese. 
+
+```json
+{
+    "status": true,
+    "message": "Success",
+    "pld": {
+        "e":"Events",
+        "d":"Dues"
+    },
+}
+```
