@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // -- OPEN
 
 Route::post('register', [ApiController::class,'register']);
+Route::post('registerAdmin', [ApiController::class,'registerAdmin']);
 Route::post('login', [ApiController::class,'login']);
 Route::post('setFirstAdminUserInfo', [ApiController::class,'setFirstAdminUserInfo']); // For first Admin (call on postman)
 Route::post('paystackConf', [ApiController::class,'paystackConf']);
@@ -30,6 +31,7 @@ Route::group([
     Route::post('setSecretaryInfo', [ApiController::class,'setSecretaryInfo']);
     Route::post('authAsAdmin', [ApiController::class,'authAsAdmin']);
     Route::post('uploadFile', [ApiController::class,'uploadFile']);
+    Route::post('setMySchool', [ApiController::class,'setMySchool']);
 
     
     Route::post('setAnnouncements', [ApiController::class,'setAnnouncements']);
@@ -40,15 +42,17 @@ Route::group([
     Route::post('setNacddedInfo', [ApiController::class,'setNacddedInfo']);
     
     
-    Route::get('getDioceseBasicInfo', [ApiController::class, 'getDioceseBasicInfo']);
-    Route::get('getDioceseGeneralInfo', [ApiController::class, 'getDioceseGeneralInfo']);
+    Route::get('getDioceseBasicInfo/{dioceseId}', [ApiController::class, 'getDioceseBasicInfo']);
+    Route::get('getDioceseGeneralInfo/{dioceseId}', [ApiController::class, 'getDioceseGeneralInfo']);
     Route::get('getSecretaryInfo', [ApiController::class, 'getSecretaryInfo']);
+    Route::get('getDioceseSecretaries/{dioceseId}', [ApiController::class, 'getDioceseSecretaries']);
     Route::get('getFile/{folder}/{filename}', [ApiController::class, 'getFile']);
     Route::get('fileExists/{folder}/{filename}', [ApiController::class, 'fileExists']);
     Route::get('getAnnouncements', [ApiController::class, 'getAnnouncements']);
     Route::get('getEvents', [ApiController::class, 'getEvents']);
     Route::get('getDiocesePayments/{payId}', [ApiController::class, 'getDiocesePayments']);
     Route::get('getNacddedInfo', [ApiController::class, 'getNacddedInfo']);
+    Route::get('getMySchools/{dioceseId}', [ApiController::class, 'getMySchools']);
 
 
     Route::get('getHighlights', [ApiController::class, 'getHighlights']);
@@ -56,6 +60,7 @@ Route::group([
     Route::get('getAdmin', [ApiController::class, 'getAdmin']);
     Route::get('removeAdmin/', [ApiController::class, 'removeAdmin']);
     Route::get('getPayments/{payId}', [ApiController::class, 'getPayments']);
+    Route::get('getSchools', [ApiController::class, 'getSchools']);
 
 
 

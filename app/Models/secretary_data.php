@@ -9,7 +9,7 @@ class secretary_data extends Model
     protected $table = 'secretary_data'; 
     protected $primaryKey = 'email';
     protected $fillable = [
-        'email', 'fname', 'mname', 'lname', 'sex','phn', 'addr'
+        'email', 'fname', 'mname', 'lname', 'sex','phn', 'addr','diocese_id'
     ];
     /*protected $hidden = [
         'password',

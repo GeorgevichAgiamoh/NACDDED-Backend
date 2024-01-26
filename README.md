@@ -334,7 +334,7 @@ This is a sensitive endpoint. You must re-login immediately after calling it.
 
 ```json
 {
-    "email":"required|email",
+    "diocese_id":"required",
     "name": "required",
     "phn": "required",
     "pwd": "required",
@@ -345,9 +345,7 @@ This is a sensitive endpoint. You must re-login immediately after calling it.
 > The `email` must exist as a registered user.
 
 
-### getDioceseBasicInfo (`GET`, getDioceseBasicInfo)
-
-Requires `email` QP
+### getDioceseBasicInfo (`GET`, getDioceseBasicInfo/{dioceseId})
 
 
 
@@ -355,16 +353,14 @@ Requires `email` QP
 
 ```json
 {
-    "email":"required",
+    "diocese_id":"required",
     "state": "required",
     "lga": "required",
     "addr": "required",
 }
 ```
 
-### getDioceseGeneralInfo (`GET`, getDioceseGeneralInfo)
-
-Requires `email` QP
+### getDioceseGeneralInfo (`GET`, getDioceseGeneralInfo/{dioceseId})
 
 
 
@@ -380,12 +376,16 @@ Requires `email` QP
     "sex": "required",
     "phn": "required",
     "addr": "required",
+    "diocese_id": "required",
 }
 ```
 
 ### getSecretaryInfo (`GET`, getSecretaryInfo)
 
 Requires `email` QP
+
+
+### getDioceseSecretaries (`GET`, getDioceseSecretaries/{dioceseId})
 
 
 
@@ -454,3 +454,36 @@ Get all the payments by that Diocese.
 ``ADMIN``
 
 > Requires the `email` QP
+
+
+
+### Create Diocese School (`POST`, setMySchool)
+
+> Get `diocese_id` from `getMyDiocese` endpoint
+
+```json
+{
+    "diocese_id":"required",
+    "name": "required",
+    "type": "required",
+    "lea":"required",
+    "addr": "required",
+    "email": "required|email",
+    "phone":"required",
+    "p_name": "required",
+    "p_email": "required",
+    "p_phone":"required",
+}
+```
+
+
+### Get Diocese Schools (`GET`, getMySchools/{dioceseId})
+
+> Can accept `count` and `start` QP
+
+
+
+### Get All Schools (`GET`, getSchools)
+
+> Can accept `count` and `start` QP
+

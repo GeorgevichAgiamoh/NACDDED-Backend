@@ -14,6 +14,7 @@ use App\Models\nacdded_info;
 use App\Models\payment_refs;
 use App\Models\pays0;
 use App\Models\pays1;
+use App\Models\schools;
 use App\Models\secretary_data;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -44,18 +45,54 @@ class ApiController extends Controller
 
     /**
      * @OA\Post(
+     *     path="/api/registerAdmin",
+     *     tags={"Unprotected"},
+     *     summary="Register Admin",
+     *     @OA\Response(response="200", description="Login Successfully"),
+     * )
+     */
+    public function registerAdmin(){
+        User::create([
+            "email"=> "admin@nacdded.org.ng",
+            "password"=> bcrypt("123456"),
+        ]);
+        $token = JWTAuth::attempt([
+            "email"=> "admin@nacdded.org.ng",
+            "password"=> "123456",
+        ]);
+        if(!empty($token)){
+            return response()->json([
+                "status"=> true,
+                "message"=> "User created successfully",
+                "token"=> $token
+            ]);
+        }
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "User created successfully",
+        ]);
+    }
+
+    /**
+     * @OA\Post(
      *     path="/api/register",
      *     tags={"Unprotected"},
-     *     summary="Register a new user",
+     *     summary="Register",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="email", type="string", format="email"),
      *             @OA\Property(property="password", type="string"),
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="fname", type="string"),
+     *             @OA\Property(property="lname", type="string"),
+     *             @OA\Property(property="phn", type="string"),
+     *             @OA\Property(property="addr", type="string"),
      *         )
      *     ),
-     *     @OA\Response(response="200", description="Register Successfully"),
+     *     @OA\Response(response="200", description="Login Successfully"),
      * )
      */
     public function register(Request $request){
@@ -63,11 +100,32 @@ class ApiController extends Controller
         $request->validate([
             "email"=>"required|email|unique:users",
             "password"=> "required",
+            "name"=> "required",
+            "fname"=> "required",
+            "lname"=> "required",
+            "phn"=> "required",
+            "addr"=> "required",
         ]);
         //Save Data to DB
         User::create([
             "email"=> $request->email,
             "password"=> bcrypt($request->password),
+        ]);
+        $newDiocese = diocese_basic_data::create([
+            "name"=> $request->name,
+            "phn"=> $request->phn,
+            "pwd"=> $request->password,
+            "verif"=> "0",
+        ]);//Create Diocese
+        secretary_data::create([
+            "email"=> $request->email,
+            "fname"=> $request->fname,
+            "lname"=> $request->lname,
+            "mname"=> "",
+            "sex"=> "",
+            "phn"=> $request->phn,
+            "addr"=> $request->addr,
+            "diocese_id"=> $newDiocese->diocese_id,
         ]);
         $token = JWTAuth::attempt([
             "email"=> $request->email,
@@ -409,7 +467,7 @@ class ApiController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="diocese_id", type="string", description="get Diocese ID from getSecretaryInfo endpoint"),
      *             @OA\Property(property="name", type="string", description="Name of the diocese"),
      *             @OA\Property(property="phn", type="string", description="Phone number of the diocese"),
      *             @OA\Property(property="pwd", type="string", description="Password for verification"),
@@ -422,68 +480,62 @@ class ApiController extends Controller
      */
     public function setDioceseBasicInfo(Request $request){
         $request->validate([
-            "email"=>"required|email",
+            "diocese_id"=>"required",
             "name"=> "required",
             "phn"=> "required",
             "pwd"=> "required",
             "verif"=> "required",
         ]);
-        $usr = User::where("email", $request->email)->first();
+        $usr = User::where("id", $request->diocese_id)->first();
         if($usr){
             $usr->update([
                 "password"=>bcrypt($request->pwd),
-            ]);            
-            diocese_basic_data::updateOrCreate(
-                ["email"=> $request->email,],
-                [
-                "name"=> $request->name,
-                "phn"=> $request->phn,
-                "pwd"=> $request->pwd,
-                "verif"=> $request->verif,
             ]);
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success. Please login again"
-            ]);
+            $dbd = diocese_basic_data::where("diocese_id", $request->diocese_id)->first();
+            if($dbd){
+                $dbd->update([
+                    "name"=> $request->name,
+                    "phn"=> $request->phn,
+                    "pwd"=> $request->pwd,
+                    "verif"=> $request->verif,
+                ]);
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success. Please login again"
+                ]);
+            }
         }
         return response()->json([
             "status"=> false,
-            "message"=> "The email does not exist"
+            "message"=> "Diocese not found"
         ]);
     }
 
 
     /**
      * @OA\Get(
-     *     path="/api/getDioceseBasicInfo",
+     *     path="/api/getDioceseBasicInfo/{dioceseId}",
      *     tags={"Api"},
      *     summary="Get Diocese Basic Info",
      *     description="Use this endpoint to get basic information about a diocese.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
+     *         name="dioceseId",
+     *         in="path",
      *         required=true,
-     *         description="Email of the diocese",
+     *         description="Diocese Id",
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
-    public function getDioceseBasicInfo(){
-        if(request()->has('email')) {
-            $eml = request()->input('email');
-            $pld = diocese_basic_data::where("email", $eml)->first();
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld,
-            ]);
-        }
+    public function getDioceseBasicInfo($dioceseId){
+        $pld = diocese_basic_data::where("diocese_id", $dioceseId)->first();
         return response()->json([
-            "status"=> false,
-            "message"=> "Email required",
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
         ]);
     }
 
@@ -499,7 +551,7 @@ class ApiController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="email", type="string", description="Email of the diocese"),
+     *             @OA\Property(property="diocese_id", type="string", description="Get it from getMyDiocese endpoint"),
      *             @OA\Property(property="state", type="string", description="State of the diocese"),
      *             @OA\Property(property="lga", type="string", description="Local Government Area of the diocese"),
      *             @OA\Property(property="addr", type="string", description="Address of the diocese"),
@@ -511,13 +563,13 @@ class ApiController extends Controller
      */
     public function setDioceseGeneralInfo(Request $request){
         $request->validate([
-            "email"=>"required",
+            "diocese_id"=>"required",
             "state"=> "required",
             "lga"=> "required",
             "addr"=> "required",
         ]);
         diocese_general_data::updateOrCreate(
-            ["email"=> $request->email,],
+            ["diocese_id"=> $request->diocese_id,],
             [
             "state"=> $request->state,
             "lga"=> $request->lga,
@@ -532,35 +584,28 @@ class ApiController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/getDioceseGeneralInfo",
+     *     path="/api/getDioceseGeneralInfo/{dioceseId}",
      *     tags={"Api"},
      *     summary="Get Diocese General Info",
      *     description="Use this endpoint to get general information about a diocese.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
+     *         name="dioceseId",
+     *         in="path",
      *         required=true,
-     *         description="Email of the diocese",
+     *         description="Diocese Id",
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
-    public function getDioceseGeneralInfo(){
-        if(request()->has('email')) {
-            $eml = request()->input('email');
-            $pld = diocese_general_data::where("email", $eml)->first();
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld,
-            ]);
-        }
+    public function getDioceseGeneralInfo($dioceseId){
+        $pld = diocese_general_data::where("diocese_id", $dioceseId)->first();
         return response()->json([
-            "status"=> false,
-            "message"=> "Email required",
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
         ]);
     }
 
@@ -583,6 +628,7 @@ class ApiController extends Controller
      *             @OA\Property(property="sex", type="string", description="Sex of the secretary"),
      *             @OA\Property(property="phn", type="string", description="Phone number of the secretary"),
      *             @OA\Property(property="addr", type="string", description="Address of the secretary"),
+     *             @OA\Property(property="diocese_id", type="string", description="Diocese ID"),
      *         )
      *     ),
      *     @OA\Response(response="200", description="Secretary info set successfully"),
@@ -598,6 +644,7 @@ class ApiController extends Controller
             "sex"=> "required",
             "phn"=> "required",
             "addr"=> "required",
+            "diocese_id"=>"required",
         ]);
         secretary_data::updateOrCreate(
             ["email"=> $request->email,],
@@ -608,6 +655,7 @@ class ApiController extends Controller
             "sex"=> $request->sex,
             "phn"=> $request->phn,
             "addr"=> $request->addr,
+            "diocese_id"=> $request->diocese_id,
         ]);
         // Respond
         return response()->json([
@@ -649,6 +697,37 @@ class ApiController extends Controller
             "message"=> "Email required",
         ]);
     }
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/getDioceseSecretaries/{dioceseId}",
+     *     tags={"Api"},
+     *     summary="Get All Secretaries for this diocese",
+     *     description="Use this endpoint to get all secretaries in this diocese",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese ID get from getSecretaryInfo endpoint",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getDioceseSecretaries($dioceseId){
+        $pld = secretary_data::where("diocese_id", $dioceseId)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);
+    }
+
+
 
     /**
      * @OA\Get(
@@ -1396,6 +1475,152 @@ class ApiController extends Controller
         ],401);   
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/setMySchool",
+     *     tags={"Api"},
+     *     summary="Create/Update School",
+     *     description="Use this endpoint to create/update a school.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="diocese_id", type="string", description="The Diocess ID for this school. Get diocese id from getSecretaryInfo endpoint"),
+     *             @OA\Property(property="name", type="string", description="Name of school"),
+     *             @OA\Property(property="type", type="string", description="Type of school"),
+     *             @OA\Property(property="lea", type="string", description="LEA of school"),
+     *             @OA\Property(property="addr", type="string", description="Address of school"),
+     *             @OA\Property(property="email", type="string", description="School's email"),
+     *             @OA\Property(property="phone", type="string", description="School's phone number"),
+     *             @OA\Property(property="p_name", type="string", description="Proprietor's name"),
+     *             @OA\Property(property="p_email", type="string", description="Proprietor's email"),
+     *             @OA\Property(property="p_phone", type="string", description="Proprietor's phone number"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function setMySchool(Request $request){
+        $request->validate([
+            "diocese_id"=>"required",
+            "name"=> "required",
+            "type"=> "required",
+            "lea"=>"required",
+            "addr"=> "required",
+            "email"=> "required|email",
+            "phone"=>"required",
+            "p_name"=> "required",
+            "p_email"=> "required",
+            "p_phone"=>"required",
+        ]);
+        schools::create([
+            "diocese_id"=>$request->diocese_id,
+            "name"=> $request->name,
+            "type"=> $request->type,
+            "lea"=>$request->lea,
+            "addr"=> $request->addr,
+            "email"=> $request->email,
+            "phone"=>$request->phone,
+            "p_name"=> $request->p_name,
+            "p_email"=> $request->p_email,
+            "p_phone"=>$request->p_phone,
+        ]);
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success"
+        ]);
+    }
+
+
+     /**
+     * @OA\Get(
+     *     path="/api/getMySchools/{dioceseId}",
+     *     tags={"Api"},
+     *     summary="Get Schools belonging to my diocese",
+     *     description="Use this endpoint to get schools belonging to a secretary's diocese",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result. If not provided, will return first 20 records only",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getMySchools($dioceseId){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = schools::where('diocese_id', $dioceseId)->skip($start)->take($count)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld
+        ]); 
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getSchools",
+     *     tags={"Admin"},
+     *     summary="ADMIN: Get all Schools",
+     *     description="Use this endpoint to get all schools. Limit by `start` and `count`",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result. If not provided, will return first 20 records only",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getSchools(){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = schools::take($count)->skip($start)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld
+        ]); 
+    }
+
 
     //------------------------------------
 
@@ -1409,8 +1634,18 @@ class ApiController extends Controller
         ]);
     }
 
-    //IF reached, token is still valid!, GET
-    public function checkTokenValidity(Request $request)
+    /**
+     * @OA\Get(
+     *     path="/api/checkTokenValidity",
+     *     tags={"Api"},
+     *     summary="Check if user is still logged in",
+     *     description="No params needed except bearer token. If you get a 200, the token is still valid",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function checkTokenValidity()
     {
         return response()->json([
             "status"=> true,

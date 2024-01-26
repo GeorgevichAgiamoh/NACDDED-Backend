@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class diocese_basic_data extends Model
 {
     protected $table = 'diocese_basic_data';
-    protected $primaryKey = 'email';
+    protected $primaryKey = 'diocese_id';
     protected $fillable = [
-        'email', 'name', 'phn', 'pwd', 'verif'
+        'name', 'phn', 'pwd', 'verif'
     ];
     /*protected $hidden = [
         'password',
