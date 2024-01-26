@@ -1,0 +1,1262 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "NACDDED API | Stable Shield Solutions",
+        "description": "Backend for the NACDDED project. Powered by Stable Shield Solutions",
+        "contact": {
+            "name": "API Support",
+            "email": "support@stableshield.com"
+        },
+        "license": {
+            "name": "Stable Shield API License",
+            "url": "http://stableshield.com/api-licenses"
+        },
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Register a new user",
+                "operationId": "82447091133210fc21daa20fe7bee91b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Register Successfully"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Login to the application",
+                "operationId": "f6d04be1de7bb4a85327471c8d3d1e42",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login Successfully"
+                    }
+                }
+            }
+        },
+        "/api/authAsAdmin": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Authenticate as an admin",
+                "description": "This endpoint requires no payload. To authenticate an admin, call this endpoint after the login endpoint. If successful, additional claims will be added to the token.",
+                "operationId": "fe3b46615f7b98fd647395afc9662e05",
+                "responses": {
+                    "200": {
+                        "description": "Authentication Successful"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getAnnouncements": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Announcements",
+                "description": "Use this endpoint to get information about announcements.",
+                "operationId": "0aa905d40e259e686e18abd0e3e39da5",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getFile/{folder}/{filename}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get File",
+                "description": "API: Use this endpoint to get a file by providing the folder and filename as path parameters.",
+                "operationId": "0bbb22a16690057989f6d7b3281b51dd",
+                "parameters": [
+                    {
+                        "name": "folder",
+                        "in": "path",
+                        "description": "Name of the folder",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "filename",
+                        "in": "path",
+                        "description": "Name of the file",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "file"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "File not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/fileExists/{folder}/{filename}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Check if File Exists",
+                "description": "API: Use this endpoint to check if a file exists by providing the folder and filename as path parameters.",
+                "operationId": "5f2c6f5880116ba9a5f8ea39bed65137",
+                "parameters": [
+                    {
+                        "name": "folder",
+                        "in": "path",
+                        "description": "Name of the folder",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "filename",
+                        "in": "path",
+                        "description": "Name of the file",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getEvents": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Events",
+                "description": "Use this endpoint to get information about events.",
+                "operationId": "163de92db4cd6edc18f6953d5a01c566",
+                "parameters": [
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Number of records to retrieve. If not specified, all will be returned",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setDioceseBasicInfo": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Set Diocese Basic Info",
+                "description": "This sensitive endpoint is used to set basic information about a diocese. You must re-login immediately after calling it.",
+                "operationId": "398e9756a107d36ee30471186d10a7e4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "name": {
+                                        "description": "Name of the diocese",
+                                        "type": "string"
+                                    },
+                                    "phn": {
+                                        "description": "Phone number of the diocese",
+                                        "type": "string"
+                                    },
+                                    "pwd": {
+                                        "description": "Password for verification",
+                                        "type": "string"
+                                    },
+                                    "verif": {
+                                        "description": "Verification status (0 or 1)",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Diocese Basic info set/updated successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getDioceseBasicInfo": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Diocese Basic Info",
+                "description": "Use this endpoint to get basic information about a diocese.",
+                "operationId": "a009e5d61424f467b6d76543343f328d",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the diocese",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setDioceseGeneralInfo": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Set Diocese General Info",
+                "description": "Use this endpoint to set general information about a diocese.",
+                "operationId": "53339366ffa664818c3362ec28ace710",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "description": "Email of the diocese",
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "description": "State of the diocese",
+                                        "type": "string"
+                                    },
+                                    "lga": {
+                                        "description": "Local Government Area of the diocese",
+                                        "type": "string"
+                                    },
+                                    "addr": {
+                                        "description": "Address of the diocese",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Diocese general info set successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getDioceseGeneralInfo": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Diocese General Info",
+                "description": "Use this endpoint to get general information about a diocese.",
+                "operationId": "36ca606652ec4e1927a47d36365dc7db",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the diocese",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setSecretaryInfo": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Set Secretary Info",
+                "description": "Use this endpoint to set information about a secretary.",
+                "operationId": "1dd6d2c05d4705428f3b106f18d258ac",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "description": "Email of the secretary",
+                                        "type": "string"
+                                    },
+                                    "fname": {
+                                        "description": "First name of the secretary",
+                                        "type": "string"
+                                    },
+                                    "lname": {
+                                        "description": "Last name of the secretary",
+                                        "type": "string"
+                                    },
+                                    "mname": {
+                                        "description": "Middle name of the secretary",
+                                        "type": "string"
+                                    },
+                                    "sex": {
+                                        "description": "Sex of the secretary",
+                                        "type": "string"
+                                    },
+                                    "phn": {
+                                        "description": "Phone number of the secretary",
+                                        "type": "string"
+                                    },
+                                    "addr": {
+                                        "description": "Address of the secretary",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Secretary info set successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getSecretaryInfo": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Secretary Info",
+                "description": "Use this endpoint to get information about a secretary.",
+                "operationId": "978cf9603aa2bf40db098cb629435e36",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the secretary",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getDiocesePayments": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Diocese Payments",
+                "description": "Use this endpoint to get all payments by a diocese.",
+                "operationId": "0b229dfebaea3399dae9951200016fb8",
+                "parameters": [
+                    {
+                        "name": "payId",
+                        "in": "path",
+                        "description": "ID of the payment record to be retrieved",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the diocese",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Start index for limiting the result",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Number of records to retrieve",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setFirstAdminUserInfo": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Create the first admin",
+                "description": "LOGIN INFO: email:admin@nacdded.org.ng, pwd:123456",
+                "operationId": "755da55942eba539d695da81491d03b0",
+                "responses": {
+                    "200": {
+                        "description": "Admin created successfully"
+                    }
+                }
+            }
+        },
+        "/api/getHighlights": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Highlights",
+                "description": "ADMIN: Use this endpoint to get information about highlights.",
+                "operationId": "b78f41b55a2fe78abffb9dac36a1aaef",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setAnnouncements": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create Announcement",
+                "description": "ADMIN: Use this endpoint to create an announcement.",
+                "operationId": "2b84b049706d02d3a55239d2dac4f18c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "description": "Title of the announcement",
+                                        "type": "string"
+                                    },
+                                    "msg": {
+                                        "description": "Message content of the announcement",
+                                        "type": "string"
+                                    },
+                                    "time": {
+                                        "description": "Time of the announcement",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Announcement created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getAdmins": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all admins",
+                "description": "ADMIN: Use this endpoint to get information about all admins.",
+                "operationId": "6e999ef13925f1ce4637dc87907f170f",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getAdmin": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Admin",
+                "description": "ADMIN: Use this endpoint to get information about a specific admin by providing the email as a query parameter.",
+                "operationId": "1fc184eab6b7ee099e1d1fcfa2de9ff7",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the admin to be retrieved",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setAdmin": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create a new admin",
+                "description": "ADMIN: This endpoint is used to create a new admin. Permissions for various actions are specified using pd1, pd2, pw1, pw2, pp1, pp2, pm1, and pm2 properties.",
+                "operationId": "59a97f5f16991515fafa4d6aeff81df5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "lname": {
+                                        "type": "string"
+                                    },
+                                    "oname": {
+                                        "type": "string"
+                                    },
+                                    "role": {
+                                        "type": "string"
+                                    },
+                                    "pd1": {
+                                        "type": "string"
+                                    },
+                                    "pd2": {
+                                        "type": "string"
+                                    },
+                                    "pw1": {
+                                        "type": "string"
+                                    },
+                                    "pw2": {
+                                        "type": "string"
+                                    },
+                                    "pp1": {
+                                        "type": "string"
+                                    },
+                                    "pp2": {
+                                        "type": "string"
+                                    },
+                                    "pm1": {
+                                        "type": "string"
+                                    },
+                                    "pm2": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Admin created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/removeAdmin": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Remove an admin",
+                "description": "ADMIN: Use this endpoint to remove an admin by providing the email as a query parameter.",
+                "operationId": "dd921019c21f5eb6feeb6ef1e6b3513a",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of the admin to be removed",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin removed successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/sendMail": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Send Email",
+                "description": "ADMIN: Use this endpoint to send an email.",
+                "operationId": "546acffb65b267786bfa4d2f3de373ad",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "to": {
+                                        "description": "Recipient email address",
+                                        "type": "string"
+                                    },
+                                    "subject": {
+                                        "description": "Email subject",
+                                        "type": "string"
+                                    },
+                                    "message": {
+                                        "description": "Email body/message",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setEvents": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create Event",
+                "description": "ADMIN: Use this endpoint to create an event.",
+                "operationId": "49719329887ee9c01de0d3f6ffcbf6e2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "description": "Title of the event",
+                                        "type": "string"
+                                    },
+                                    "time": {
+                                        "description": "Time of the event",
+                                        "type": "string"
+                                    },
+                                    "venue": {
+                                        "description": "Venue of the event",
+                                        "type": "string"
+                                    },
+                                    "fee": {
+                                        "description": "Fee for the event",
+                                        "type": "string"
+                                    },
+                                    "start": {
+                                        "description": "Start time of the event",
+                                        "type": "string"
+                                    },
+                                    "end": {
+                                        "description": "End time of the event",
+                                        "type": "string"
+                                    },
+                                    "theme": {
+                                        "description": "Theme of the event",
+                                        "type": "string"
+                                    },
+                                    "speakers": {
+                                        "description": "Speakers in the event. I recommend comma separated",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Event created successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/uploadPayment": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Upload Payment Record",
+                "description": "ADMIN: Use this endpoint to manually upload payment records.",
+                "operationId": "243c8b22a589110512a6d111348f27cf",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ref": {
+                                        "description": "Reference of the payment",
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "description": "Name associated with the payment",
+                                        "type": "string"
+                                    },
+                                    "time": {
+                                        "description": "Time of the payment",
+                                        "type": "string"
+                                    },
+                                    "year": {
+                                        "description": "Year for annual dues (optional)",
+                                        "type": "string"
+                                    },
+                                    "event": {
+                                        "description": "Event ID for event-related payments (optional)",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment record uploaded successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getPayments/{payId}": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Payment Records",
+                "description": "ADMIN: Use this endpoint to get payment records by providing the payId as a path parameter. You can limit the result using start and count query parameters.",
+                "operationId": "78290d5f81c6dc0b4e0a0c838a0b159e",
+                "parameters": [
+                    {
+                        "name": "payId",
+                        "in": "path",
+                        "description": "ID of the payment record to be retrieved",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Start index for limiting the result",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Number of records to retrieve",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/setNacddedInfo": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Set Nacdded Info",
+                "description": "ADMIN: Use this endpoint to set information about Nacdded.",
+                "operationId": "d31132646952049c9772ee4dbd9a08b1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "description": "Email of Nacdded",
+                                        "type": "string"
+                                    },
+                                    "cname": {
+                                        "description": "Name of the organization",
+                                        "type": "string"
+                                    },
+                                    "regno": {
+                                        "description": "Registration number of the organization",
+                                        "type": "string"
+                                    },
+                                    "addr": {
+                                        "description": "Address of the organization",
+                                        "type": "string"
+                                    },
+                                    "nationality": {
+                                        "description": "Nationality of the organization",
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "description": "State of the organization",
+                                        "type": "string"
+                                    },
+                                    "lga": {
+                                        "description": "Local Government Area of the organization",
+                                        "type": "string"
+                                    },
+                                    "aname": {
+                                        "description": "Name of the authorized person",
+                                        "type": "string"
+                                    },
+                                    "anum": {
+                                        "description": "Contact number of the authorized person",
+                                        "type": "string"
+                                    },
+                                    "bnk": {
+                                        "description": "Bank name",
+                                        "type": "string"
+                                    },
+                                    "pname": {
+                                        "description": "Name of the person making the payment",
+                                        "type": "string"
+                                    },
+                                    "peml": {
+                                        "description": "Email of the person making the payment",
+                                        "type": "string"
+                                    },
+                                    "pphn": {
+                                        "description": "Phone number of the person making the payment",
+                                        "type": "string"
+                                    },
+                                    "paddr": {
+                                        "description": "Address of the person making the payment",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Nacdded info set successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getNacddedInfo": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get Nacdded Info",
+                "description": "ADMIN: Use this endpoint to get information about Nacdded.",
+                "operationId": "c9666168b8c164fe36a2a97c7de4a3c8",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email of Nacdded",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    }
+}

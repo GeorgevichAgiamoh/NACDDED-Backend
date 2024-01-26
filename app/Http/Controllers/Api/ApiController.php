@@ -22,9 +22,42 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+/**
+ * @OA\Info(
+ *    title="NACDDED API | Stable Shield Solutions",
+ *    version="1.0.0",
+ *    description="Backend for the NACDDED project. Powered by Stable Shield Solutions",
+ *    @OA\Contact(
+ *        email="support@stableshield.com",
+ *        name="API Support"
+ *    ),
+ *    @OA\License(
+ *        name="Stable Shield API License",
+ *        url="http://stableshield.com/api-licenses"
+ *    )
+ * )
+ */
+
+
 class ApiController extends Controller
 {
-    //Register API (POST, formdata)
+
+    /**
+     * @OA\Post(
+     *     path="/api/register",
+     *     tags={"Unprotected"},
+     *     summary="Register a new user",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Register Successfully"),
+     * )
+     */
     public function register(Request $request){
         //Data validation
         $request->validate([
@@ -54,7 +87,22 @@ class ApiController extends Controller
         ]);
     }
 
-    //Login API (POST, formdata)
+    /**
+     * @OA\Post(
+     *     path="/api/login",
+     *     tags={"Unprotected"},
+     *     summary="Login to the application",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Login Successfully"),
+     * )
+     */
     public function login(Request $request){
         //Data validation
         $request->validate([
@@ -137,6 +185,18 @@ class ApiController extends Controller
 
     //---Protected from here
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/authAsAdmin",
+     *     tags={"Api"},
+     *     summary="Authenticate as an admin",
+     *     description="This endpoint requires no payload. To authenticate an admin, call this endpoint after the login endpoint. If successful, additional claims will be added to the token.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Authentication Successful"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function authAsAdmin(){
         $user = auth()->user();
         $apld = admin_user::where("email","=", $user->email)->first();
@@ -168,7 +228,17 @@ class ApiController extends Controller
 
 
 
-    //GET
+    /**
+     * @OA\Get(
+     *     path="/api/getAnnouncements",
+     *     tags={"Api"},
+     *     summary="Get Announcements",
+     *     description="Use this endpoint to get information about announcements.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getAnnouncements(){
         $pld = announcements::all();
         // Respond
@@ -204,7 +274,39 @@ class ApiController extends Controller
         }
     }
 
-    //GET (FILE)
+    /**
+     * @OA\Get(
+     *     path="/api/getFile/{folder}/{filename}",
+     *     tags={"Api"},
+     *     summary="Get File",
+     *     description="API: Use this endpoint to get a file by providing the folder and filename as path parameters.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="folder",
+     *         in="path",
+     *         required=true,
+     *         description="Name of the folder",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="filename",
+     *         in="path",
+     *         required=true,
+     *         description="Name of the file",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *          response="200",
+     *          description="Success",
+     *          @OA\MediaType(
+     *              mediaType="application/octet-stream",
+     *              @OA\Schema(type="file")
+     *          )
+     *      ),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     *     @OA\Response(response="404", description="File not found"),
+     * )
+     */
     public function getFile($folder,$filename){
         $filePath = public_path('uploads/'.$folder.'/'.$filename);
         if (file_exists($filePath)) {
@@ -219,7 +321,31 @@ class ApiController extends Controller
 
     
 
-    //GET (FILE)
+    /**
+     * @OA\Get(
+     *     path="/api/fileExists/{folder}/{filename}",
+     *     tags={"Api"},
+     *     summary="Check if File Exists",
+     *     description="API: Use this endpoint to check if a file exists by providing the folder and filename as path parameters.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="folder",
+     *         in="path",
+     *         required=true,
+     *         description="Name of the folder",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="filename",
+     *         in="path",
+     *         required=true,
+     *         description="Name of the file",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function fileExists($folder,$filename){
         $filePath = public_path('uploads/'.$folder.'/'.$filename);
         if (file_exists($filePath)) {
@@ -235,7 +361,24 @@ class ApiController extends Controller
         }
     }
 
-    //GET
+    /**
+     * @OA\Get(
+     *     path="/api/getEvents",
+     *     tags={"Api"},
+     *     summary="Get Events",
+     *     description="Use this endpoint to get information about events.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve. If not specified, all will be returned",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getEvents(){
         $count = 0;
         if(request()->has('count')) {
@@ -255,7 +398,28 @@ class ApiController extends Controller
         ]);
     }
 
-    //Profile API (POST)
+    /**
+     * @OA\Post(
+     *     path="/api/setDioceseBasicInfo",
+     *     tags={"Api"},
+     *     summary="Set Diocese Basic Info",
+     *     description="This sensitive endpoint is used to set basic information about a diocese. You must re-login immediately after calling it.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="name", type="string", description="Name of the diocese"),
+     *             @OA\Property(property="phn", type="string", description="Phone number of the diocese"),
+     *             @OA\Property(property="pwd", type="string", description="Password for verification"),
+     *             @OA\Property(property="verif", type="string", description="Verification status (0 or 1)"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Diocese Basic info set/updated successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setDioceseBasicInfo(Request $request){
         $request->validate([
             "email"=>"required|email",
@@ -289,7 +453,24 @@ class ApiController extends Controller
     }
 
 
-    //GET
+    /**
+     * @OA\Get(
+     *     path="/api/getDioceseBasicInfo",
+     *     tags={"Api"},
+     *     summary="Get Diocese Basic Info",
+     *     description="Use this endpoint to get basic information about a diocese.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the diocese",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getDioceseBasicInfo(){
         if(request()->has('email')) {
             $eml = request()->input('email');
@@ -307,7 +488,27 @@ class ApiController extends Controller
     }
 
 
-    //Profile API (POST)
+    /**
+     * @OA\Post(
+     *     path="/api/setDioceseGeneralInfo",
+     *     tags={"Api"},
+     *     summary="Set Diocese General Info",
+     *     description="Use this endpoint to set general information about a diocese.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", description="Email of the diocese"),
+     *             @OA\Property(property="state", type="string", description="State of the diocese"),
+     *             @OA\Property(property="lga", type="string", description="Local Government Area of the diocese"),
+     *             @OA\Property(property="addr", type="string", description="Address of the diocese"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Diocese general info set successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setDioceseGeneralInfo(Request $request){
         $request->validate([
             "email"=>"required",
@@ -329,6 +530,24 @@ class ApiController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/getDioceseGeneralInfo",
+     *     tags={"Api"},
+     *     summary="Get Diocese General Info",
+     *     description="Use this endpoint to get general information about a diocese.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the diocese",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getDioceseGeneralInfo(){
         if(request()->has('email')) {
             $eml = request()->input('email');
@@ -346,6 +565,30 @@ class ApiController extends Controller
     }
 
 
+    /**
+     * @OA\Post(
+     *     path="/api/setSecretaryInfo",
+     *     tags={"Api"},
+     *     summary="Set Secretary Info",
+     *     description="Use this endpoint to set information about a secretary.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", description="Email of the secretary"),
+     *             @OA\Property(property="fname", type="string", description="First name of the secretary"),
+     *             @OA\Property(property="lname", type="string", description="Last name of the secretary"),
+     *             @OA\Property(property="mname", type="string", description="Middle name of the secretary"),
+     *             @OA\Property(property="sex", type="string", description="Sex of the secretary"),
+     *             @OA\Property(property="phn", type="string", description="Phone number of the secretary"),
+     *             @OA\Property(property="addr", type="string", description="Address of the secretary"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Secretary info set successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setSecretaryInfo(Request $request){
         $request->validate([
             "email"=>"required",
@@ -373,6 +616,24 @@ class ApiController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/getSecretaryInfo",
+     *     tags={"Api"},
+     *     summary="Get Secretary Info",
+     *     description="Use this endpoint to get information about a secretary.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the secretary",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getSecretaryInfo(){
         if(request()->has('email')) {
             $eml = request()->input('email');
@@ -389,16 +650,60 @@ class ApiController extends Controller
         ]);
     }
 
-    //GET
-    public function getDiocesePayments(){
+    /**
+     * @OA\Get(
+     *     path="/api/getDiocesePayments",
+     *     tags={"Api"},
+     *     summary="Get Diocese Payments",
+     *     description="Use this endpoint to get all payments by a diocese.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="payId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the payment record to be retrieved",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the diocese",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getDiocesePayments($payId){
         if(request()->has('email')) {
+            $start = 0;
+            $count = 10000;
+            if(request()->has('start') && request()->has('count')) {
+                $start = request()->input('start');
+                $count = request()->input('count');
+            }
             $eml = request()->input('email');
-            $events = pays1::where('email', $eml)->get();
-            $dues = pays0::where('email', $eml)->get();
-            $pld = [
-                'e'=> $events,
-                'd'=> $dues,
-            ];
+            $pld = null;
+            if($payId == '0'){
+                $pld = pays0::where('email', $eml)->skip($start)->take($count)->get();
+            }else{
+                $pld = pays1::where('email', $eml)->skip($start)->take($count)->get();
+            }
             return response()->json([
                 "status"=> true,
                 "message"=> "Success",
@@ -428,16 +733,26 @@ class ApiController extends Controller
 
     //--------------- ADMIN CODES
 
+    /**
+     * @OA\Post(
+     *     path="/api/setFirstAdminUserInfo",
+     *     tags={"Unprotected"},
+     *     description="LOGIN INFO: email:admin@nacdded.org.ng, pwd:123456",
+     *     summary="Create the first admin",
+     *     @OA\Response(response="200", description="Admin created successfully"),
+     * )
+     */
     public function setFirstAdminUserInfo(){
         admin_user::updateOrCreate(
-            ["memid"=> '11111111',],
+            ["email"=> 'admin@nacdded.org.ng',],
             [
-            "lname"=> 'ADSI',
+            "lname"=> 'NACDDED',
             "oname"=> 'Stable Shield',
-            "eml"=> 'admin@adsicoop.com.ng',
             "role"=> '0',
             "pd1"=> '1',
             "pd2"=> '1',
+            "pw1"=> '1',
+            "pw2"=> '1',
             "pp1"=> '1',
             "pp2"=> '1',
             "pm1"=> '1',
@@ -451,47 +766,17 @@ class ApiController extends Controller
         ]);
     }
 
-
-    //POST
-    public function setAdminUserInfo(Request $request){
-        $request->validate([
-            "email"=>"required|email",
-            "lname"=> "required",
-            "oname"=> "required",
-            "role"=> "required",
-            "pd1"=> "required",
-            "pd2"=> "required",
-            "pw1"=> "required",
-            "pw2"=> "required",
-            "pp1"=> "required",
-            "pp2"=> "required",
-            "pm1"=> "required",
-            "pm2"=> "required",
-        ]);
-        admin_user::updateOrCreate(
-            ["email"=> $request->email,],
-            [
-            "lname"=> $request->lname,
-            "oname"=> $request->oname,
-            "role"=> $request->role,
-            "pd1"=> $request->pd1,
-            "pd2"=> $request->pd2,
-            "pw1"=> $request->pw1,
-            "pw2"=> $request->pw2,
-            "pp1"=> $request->pp1,
-            "pp2"=> $request->pp2,
-            "pm1"=> $request->pm1,
-            "pm2"=> $request->pm2,
-            
-        ]);
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "Admin User Info updated"
-        ]);
-    }
-
-    //GET 
+    /**
+     * @OA\Get(
+     *     path="/api/getHighlights",
+     *     tags={"Admin"},
+     *     summary="Get Highlights",
+     *     description="ADMIN: Use this endpoint to get information about highlights.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getHighlights(){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -514,7 +799,26 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
+    /**
+     * @OA\Post(
+     *     path="/api/setAnnouncements",
+     *     tags={"Admin"},
+     *     summary="Create Announcement",
+     *     description="ADMIN: Use this endpoint to create an announcement.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="title", type="string", description="Title of the announcement"),
+     *             @OA\Property(property="msg", type="string", description="Message content of the announcement"),
+     *             @OA\Property(property="time", type="string", description="Time of the announcement"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Announcement created successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setAnnouncements(Request $request){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -540,7 +844,17 @@ class ApiController extends Controller
         ],401);
     }
 
-     //GET
+     /**
+     * @OA\Get(
+     *     path="/api/getAdmins",
+     *     tags={"Admin"},
+     *     summary="Get all admins",
+     *     description="ADMIN: Use this endpoint to get information about all admins.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
      public function getAdmins(){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -557,16 +871,40 @@ class ApiController extends Controller
         ],401);
     }
 
-    //GET
-    public function getAdmin($adminId){
+    /**
+     * @OA\Get(
+     *     path="/api/getAdmin",
+     *     tags={"Admin"},
+     *     summary="Get Admin",
+     *     description="ADMIN: Use this endpoint to get information about a specific admin by providing the email as a query parameter.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the admin to be retrieved",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getAdmin(){
         $role = auth()->payload()->get('role');
         if ( $role!=null) { //Granted to all admin as is needed on first page
-            $pld = admin_user::where('memid', $adminId)->first();
+            if(request()->has('email')) {
+                $eml = request()->input('email');
+                $pld = admin_user::where('email', $eml)->first();
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                    "pld"=> $pld
+                ]);   
+            }
             return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> $pld
-            ]);   
+                "status"=> false,
+                "message"=> "Email required",
+            ]);
         }
         return response()->json([
             "status"=> false,
@@ -574,7 +912,35 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
+    /**
+     * @OA\Post(
+     *     path="/api/setAdmin",
+     *     tags={"Admin"},
+     *     summary="Create a new admin",
+     *     description="ADMIN: This endpoint is used to create a new admin. Permissions for various actions are specified using pd1, pd2, pw1, pw2, pp1, pp2, pm1, and pm2 properties.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="lname", type="string"),
+     *             @OA\Property(property="oname", type="string"),
+     *             @OA\Property(property="role", type="string"),
+     *             @OA\Property(property="pd1", type="string"),
+     *             @OA\Property(property="pd2", type="string"),
+     *             @OA\Property(property="pw1", type="string"),
+     *             @OA\Property(property="pw2", type="string"),
+     *             @OA\Property(property="pp1", type="string"),
+     *             @OA\Property(property="pp2", type="string"),
+     *             @OA\Property(property="pm1", type="string"),
+     *             @OA\Property(property="pm2", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Admin created successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setAdmin(Request $request){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -621,21 +987,46 @@ class ApiController extends Controller
         ],401);
     }
 
-    //GET
-    public function removeAdmin($adminId){
+    
+    /**
+     * @OA\Get(
+     *     path="/api/removeAdmin",
+     *     tags={"Admin"},
+     *     summary="Remove an admin",
+     *     description="ADMIN: Use this endpoint to remove an admin by providing the email as a query parameter.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the admin to be removed",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Admin removed successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function removeAdmin(){
         $role = auth()->payload()->get('role');
         if ( $role!=null && $role=='0') {
-            $dels = admin_user::where('memid', $adminId)->delete();
-            if($dels>0){
+            if(request()->has('email')) {
+                $eml = request()->input('email');
+                $dels = admin_user::where('email', $eml)->delete();
+                if($dels>0){
+                    return response()->json([
+                        "status"=> true,
+                        "message"=> "Success",
+                    ]);  
+                }
                 return response()->json([
-                    "status"=> true,
-                    "message"=> "Success",
-                ]);  
+                    "status"=> false,
+                    "message"=> "Nothing to delete"
+                ]);    
             }
             return response()->json([
                 "status"=> false,
-                "message"=> "Nothing to delete"
-            ]);   
+                "message"=> "Email required",
+            ]);
         }
         return response()->json([
             "status"=> false,
@@ -643,7 +1034,26 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST 
+    /**
+     * @OA\Post(
+     *     path="/api/sendMail",
+     *     tags={"Admin"},
+     *     summary="Send Email",
+     *     description="ADMIN: Use this endpoint to send an email.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="to", type="string", description="Recipient email address"),
+     *             @OA\Property(property="subject", type="string", description="Email subject"),
+     *             @OA\Property(property="message", type="string", description="Email body/message"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Email sent successfully", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function sendMail(Request $request){
         $pd2 = auth()->payload()->get('pd2');
         if ( $pd2!=null  && $pd2=='1') { //Can write to dir
@@ -672,7 +1082,31 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
+    /**
+     * @OA\Post(
+     *     path="/api/setEvents",
+     *     tags={"Admin"},
+     *     summary="Create Event",
+     *     description="ADMIN: Use this endpoint to create an event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="title", type="string", description="Title of the event"),
+     *             @OA\Property(property="time", type="string", description="Time of the event"),
+     *             @OA\Property(property="venue", type="string", description="Venue of the event"),
+     *             @OA\Property(property="fee", type="string", description="Fee for the event"),
+     *             @OA\Property(property="start", type="string", description="Start time of the event"),
+     *             @OA\Property(property="end", type="string", description="End time of the event"),
+     *             @OA\Property(property="theme", type="string", description="Theme of the event"),
+     *             @OA\Property(property="speakers", type="string", description="Speakers in the event. I recommend comma separated"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Event created successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setEvents(Request $request){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -684,6 +1118,7 @@ class ApiController extends Controller
                 "start"=> "required",
                 "end"=> "required",
                 "theme"=> "required",
+                "speakers"=> "required",
             ]);
             events::create([
                 "title"=> $request->title,
@@ -693,6 +1128,7 @@ class ApiController extends Controller
                 "start"=> $request->start,
                 "end"=> $request->end,
                 "theme"=> $request->theme,
+                "speakers"=> $request->speakers,
             ]);
             // Respond
             return response()->json([
@@ -706,7 +1142,28 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
+    /**
+     * @OA\Post(
+     *     path="/api/uploadPayment",
+     *     tags={"Admin"},
+     *     summary="Upload Payment Record",
+     *     description="ADMIN: Use this endpoint to manually upload payment records.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="ref", type="string", description="Reference of the payment"),
+     *             @OA\Property(property="name", type="string", description="Name associated with the payment"),
+     *             @OA\Property(property="time", type="string", description="Time of the payment"),
+     *             @OA\Property(property="year", type="string", description="Year for annual dues (optional)"),
+     *             @OA\Property(property="event", type="string", description="Event ID for event-related payments (optional)"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Payment record uploaded successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function uploadPayment(Request $request){ 
         $pp2 = auth()->payload()->get('pp2');
         if ( $pp2!=null  && $pp2=='1') {
@@ -752,7 +1209,38 @@ class ApiController extends Controller
         ],401);
     }
 
-     //GET
+     /**
+     * @OA\Get(
+     *     path="/api/getPayments/{payId}",
+     *     tags={"Admin"},
+     *     summary="Get Payment Records",
+     *     description="ADMIN: Use this endpoint to get payment records by providing the payId as a path parameter. You can limit the result using start and count query parameters.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="payId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the payment record to be retrieved",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
      public function getPayments($payId){
         $pp1 = auth()->payload()->get('pp1');
         if ( $pp1!=null  && $pp1=='1') { //Can read from dir
@@ -781,7 +1269,37 @@ class ApiController extends Controller
         ],401);
     }
 
-    //POST
+    /**
+     * @OA\Post(
+     *     path="/api/setNacddedInfo",
+     *     tags={"Admin"},
+     *     summary="Set Nacdded Info",
+     *     description="ADMIN: Use this endpoint to set information about Nacdded.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", description="Email of Nacdded"),
+     *             @OA\Property(property="cname", type="string", description="Name of the organization"),
+     *             @OA\Property(property="regno", type="string", description="Registration number of the organization"),
+     *             @OA\Property(property="addr", type="string", description="Address of the organization"),
+     *             @OA\Property(property="nationality", type="string", description="Nationality of the organization"),
+     *             @OA\Property(property="state", type="string", description="State of the organization"),
+     *             @OA\Property(property="lga", type="string", description="Local Government Area of the organization"),
+     *             @OA\Property(property="aname", type="string", description="Name of the authorized person"),
+     *             @OA\Property(property="anum", type="string", description="Contact number of the authorized person"),
+     *             @OA\Property(property="bnk", type="string", description="Bank name"),
+     *             @OA\Property(property="pname", type="string", description="Name of the person making the payment"),
+     *             @OA\Property(property="peml", type="string", description="Email of the person making the payment"),
+     *             @OA\Property(property="pphn", type="string", description="Phone number of the person making the payment"),
+     *             @OA\Property(property="paddr", type="string", description="Address of the person making the payment"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Nacdded info set successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function setNacddedInfo(Request $request){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -831,7 +1349,24 @@ class ApiController extends Controller
         ],401);
     }
 
-    //GET
+    /**
+     * @OA\Get(
+     *     path="/api/getNacddedInfo",
+     *     tags={"Admin"},
+     *     summary="Get Nacdded Info",
+     *     description="ADMIN: Use this endpoint to get information about Nacdded.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of Nacdded",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function getNacddedInfo(){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
@@ -860,130 +1395,6 @@ class ApiController extends Controller
             "message"=> "Access denied"
         ],401);   
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-    
-    
-
-    //-- ADMIN
-
-    //GET 
-    public function getVerificationStats(){
-        $pd1 = auth()->payload()->get('pd1');
-        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
-            $totalVerified = member_basic_data::where('verif', '1')->count();
-            $totalUnverified = member_basic_data::where('verif', '0')->count();
-            return response()->json([
-                "status"=> true,
-                "message"=> "Success",
-                "pld"=> [
-                    'totalVerified'=>$totalVerified,
-                    'totalUnverified'=>$totalUnverified
-                ],
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-    //GET
-    public function getMembersByV($vstat){
-        $start = 0;
-        $count = 20;
-        if(request()->has('start') && request()->has('count')) {
-            $start = request()->input('start');
-            $count = request()->input('count');
-        }
-        $pd1 = auth()->payload()->get('pd1');
-        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
-            $members = member_basic_data::where('verif', $vstat)
-                ->skip($start)
-                ->take($count)
-                ->get();
-            $pld = [];
-            foreach ($members as $member) {
-                $memid = $member->memid;
-                $genData = member_general_data::where('memid', $memid)->first();
-                $pld[] = [
-                    'b'=> $member,
-                    'g'=> $genData,
-                ];
-            }
-            return response()->json([
-                "status"=> true,
-                "message"=> "Retrived the first $count starting at $start position",
-                "pld"=> $pld
-            ]);   
-        }
-        return response()->json([
-            "status"=> false,
-            "message"=> "Access denied"
-        ],401);
-    }
-
-    
-
-    
-
-    
-
-    
-
-    
-
-
-    
-
-
 
 
     //------------------------------------

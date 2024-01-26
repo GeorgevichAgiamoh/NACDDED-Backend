@@ -8,7 +8,7 @@ class events extends Model
 {
     protected $table = 'events'; 
     protected $fillable = [
-        'title','time', 'venue', 'fee','start','end','theme'
+        'title','time', 'venue', 'fee','start','end','theme','speakers'
     ];
     /*protected $hidden = [
         'password',

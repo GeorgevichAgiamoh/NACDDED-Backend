@@ -314,6 +314,7 @@ The info tabs on admin dashboard (first page).
     "start": "required",
     "end": "required",
     "theme": "required",
+    "speakers": "required - recommended comma separated",
 }
 ```
 
@@ -414,22 +415,14 @@ Limit the no. of records retrieved with the `start` and `count` query params (in
 
 
 
-### getDiocesePayments (GET, getDiocesePayments)
+### getDiocesePayments (GET, getDiocesePayments/{payId})
 
-> Requires the `email` QP
+> Requires the `email` QP and payId path param (payId is 0(dues) 1(events))
+
+> Can accept `count` and `start` QP
 
 Get all the payments by that Diocese. 
 
-```json
-{
-    "status": true,
-    "message": "Success",
-    "pld": {
-        "e":"Events",
-        "d":"Dues"
-    },
-}
-```
 
 
 ### setNacddedInfo (`POST`, setNacddedInfo)

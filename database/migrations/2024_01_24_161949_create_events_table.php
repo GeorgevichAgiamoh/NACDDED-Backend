@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('start');
             $table->string('end');
             $table->text('theme');
+            $table->text('speakers');
             $table->timestamps();
         });
     }
