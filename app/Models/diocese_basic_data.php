@@ -8,6 +8,7 @@ class diocese_basic_data extends Model
 {
     protected $table = 'diocese_basic_data';
     protected $primaryKey = 'diocese_id';
+    public $incrementing = false;
     protected $fillable = [
         'name', 'phn', 'pwd', 'verif'
     ];

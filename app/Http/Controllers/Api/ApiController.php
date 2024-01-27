@@ -615,7 +615,7 @@ class ApiController extends Controller
      *     path="/api/setSecretaryInfo",
      *     tags={"Api"},
      *     summary="Set Secretary Info",
-     *     description="Use this endpoint to set information about a secretary.",
+     *     description="Use this endpoint to craete/update a secretary.",
      *     security={{"bearerAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -646,6 +646,13 @@ class ApiController extends Controller
             "addr"=> "required",
             "diocese_id"=>"required",
         ]);
+        $pld = User::where("email","=", $request->email)->first();
+        if(!$pld){
+            User::create([
+                "email"=> $request->email,
+                "password"=> bcrypt("123456"),
+            ]);
+        }
         secretary_data::updateOrCreate(
             ["email"=> $request->email,],
             [

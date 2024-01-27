@@ -8,6 +8,7 @@ class diocese_general_data extends Model
 {
     protected $table = 'diocese_general_data';
     protected $primaryKey = 'email';
+    public $incrementing = false;
     protected $fillable = [
          'diocese_id','state','lga', 'addr'
     ];

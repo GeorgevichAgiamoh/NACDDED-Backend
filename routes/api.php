@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiController;
 
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -61,24 +72,6 @@ Route::group([
     Route::get('removeAdmin/', [ApiController::class, 'removeAdmin']);
     Route::get('getPayments/{payId}', [ApiController::class, 'getPayments']);
     Route::get('getSchools', [ApiController::class, 'getSchools']);
-
-
-
-
-    //TODO Remove ---OLD 
-    Route::post('setMemberFinancialInfo', [ApiController::class,'setMemberFinancialInfo']);
-
-
-    
-    //--
-
-
-    Route::get('getMemberFinancialInfo/{uid}', [ApiController::class, 'getMemberFinancialInfo']);
-    Route::get('getMemDuesByYear/{memid}/{year}', [ApiController::class, 'getMemDuesByYear']);
-
-    Route::get('getVerificationStats', [ApiController::class, 'getVerificationStats']);
-    Route::get('getMembersByV/{vstat}', [ApiController::class, 'getMembersByV']);
-    
 
     
     Route::get('refresh', [ApiController::class,'refreshToken']);
