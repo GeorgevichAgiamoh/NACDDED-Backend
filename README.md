@@ -196,6 +196,8 @@ No auth required to access these endpoints
 
 ### Login (`POST`, login)
 
+> Call the adminlogin endpoint for admins
+
 ```json
 {
     "email":"required|email",

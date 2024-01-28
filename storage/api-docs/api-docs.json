@@ -19,7 +19,7 @@
                 "tags": [
                     "Unprotected"
                 ],
-                "summary": "Register",
+                "summary": "YOU DONT NEED THIS ENDPOINT !!!!",
                 "operationId": "82447091133210fc21daa20fe7bee91b",
                 "requestBody": {
                     "required": true,
@@ -47,6 +47,39 @@
                                         "type": "string"
                                     },
                                     "addr": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login Successfully"
+                    }
+                }
+            }
+        },
+        "/api/adminlogin": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Login as admin",
+                "operationId": "898c8c7ec82bc541f12a27852ae6e19a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
                                         "type": "string"
                                     }
                                 },
@@ -93,29 +126,6 @@
                         "description": "Login Successfully"
                     }
                 }
-            }
-        },
-        "/api/authAsAdmin": {
-            "post": {
-                "tags": [
-                    "Api"
-                ],
-                "summary": "Authenticate as an admin",
-                "description": "This endpoint requires no payload. To authenticate an admin, call this endpoint after the login endpoint. If successful, additional claims will be added to the token.",
-                "operationId": "fe3b46615f7b98fd647395afc9662e05",
-                "responses": {
-                    "200": {
-                        "description": "Authentication Successful"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/api/getAnnouncements": {
@@ -476,7 +486,7 @@
                     "Api"
                 ],
                 "summary": "Set Secretary Info",
-                "description": "Use this endpoint to set information about a secretary.",
+                "description": "Use this endpoint to craete/update a secretary.",
                 "operationId": "1dd6d2c05d4705428f3b106f18d258ac",
                 "requestBody": {
                     "required": true,

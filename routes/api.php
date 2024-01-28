@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('register', [ApiController::class,'register']);
 Route::post('registerAdmin', [ApiController::class,'registerAdmin']);
 Route::post('login', [ApiController::class,'login']);
+Route::post('adminlogin', [ApiController::class,'adminlogin']);
 Route::post('setFirstAdminUserInfo', [ApiController::class,'setFirstAdminUserInfo']); // For first Admin (call on postman)
 Route::post('paystackConf', [ApiController::class,'paystackConf']);
 

@@ -43,14 +43,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class ApiController extends Controller
 {
 
-    /**
-     * @OA\Post(
-     *     path="/api/registerAdmin",
-     *     tags={"Unprotected"},
-     *     summary="Register Admin",
-     *     @OA\Response(response="200", description="Login Successfully"),
-     * )
-     */
+    
     public function registerAdmin(){
         User::create([
             "email"=> "admin@nacdded.org.ng",
@@ -78,7 +71,7 @@ class ApiController extends Controller
      * @OA\Post(
      *     path="/api/register",
      *     tags={"Unprotected"},
-     *     summary="Register",
+     *     summary="YOU DONT NEED THIS ENDPOINT !!!!",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -144,6 +137,56 @@ class ApiController extends Controller
             "message"=> "User created successfully",
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/adminlogin",
+     *     tags={"Unprotected"},
+     *     summary="Login as admin",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Login Successfully"),
+     * )
+     */
+    public function adminlogin(Request $request){
+        //Data validation
+        $request->validate([
+            "email"=>"required|email",
+            "password"=> "required",
+        ]);
+        $user = User::where("email","=", $request->email)->first();
+        $apld = admin_user::where("email","=", $user->email)->first();
+        if($apld){
+            $customClaims = [
+                'role'=>$apld->role,
+                'pd1' => $apld->pd1, 
+                'pd2' => $apld->pd2, 
+                'pw1' => $apld->pw1, 
+                'pw2' => $apld->pw2, 
+                'pp1' => $apld->pp1, 
+                'pp2' => $apld->pp2, 
+                'pm1' => $apld->pm1, 
+                'pm2' => $apld->pm2, 
+            ];
+            $token = JWTAuth::customClaims($customClaims)->fromUser($user);
+            return response()->json([
+                "status"=> true,
+                "message"=> "Admin authorization granted",
+                "token"=> $token,
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Invalid login details",
+        ]);
+    }
+
 
     /**
      * @OA\Post(
@@ -244,17 +287,6 @@ class ApiController extends Controller
     //---Protected from here
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/authAsAdmin",
-     *     tags={"Api"},
-     *     summary="Authenticate as an admin",
-     *     description="This endpoint requires no payload. To authenticate an admin, call this endpoint after the login endpoint. If successful, additional claims will be added to the token.",
-     *     security={{"bearerAuth": {}}},
-     *     @OA\Response(response="200", description="Authentication Successful"),
-     *     @OA\Response(response="401", description="Unauthorized"),
-     * )
-     */
     public function authAsAdmin(){
         $user = auth()->user();
         $apld = admin_user::where("email","=", $user->email)->first();
