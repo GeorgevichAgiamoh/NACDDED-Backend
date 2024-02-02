@@ -168,7 +168,7 @@ Every payment has a `ref`. You must provide this reference either to this server
 
 nacdded-(payId)-(amt)-(email)-(mills)
 
-- `payId` is the type of payment. 0 for annual dues, 1 for events
+- `payId` is the type of payment. 0 for annual dues, 1 for events, 2 for donations
 
 - `mills` is milliseconds since epoch. It can be anything as long as its unique. Also, you may use it as that particular payment record id 
 
@@ -330,8 +330,6 @@ If you want to get all events, call this endpoint without any payload. Alternati
 
 ### setDioceseBasicInfo (`POST`, setDioceseBasicInfo)
 
-This is a sensitive endpoint. You must re-login immediately after calling it.
-
 > The `verif` prop has value 0/1 and it tells if that user has been verified.
 
 ```json
@@ -339,7 +337,6 @@ This is a sensitive endpoint. You must re-login immediately after calling it.
     "diocese_id":"required",
     "name": "required",
     "phn": "required",
-    "pwd": "required",
     "verif":"required",
 }
 ```

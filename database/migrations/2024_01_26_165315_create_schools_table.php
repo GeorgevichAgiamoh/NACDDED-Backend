@@ -24,6 +24,9 @@ return new class extends Migration
             $table->string('p_email');
             $table->string('p_phone');
             $table->timestamps();
+
+            // For queries based on diocese_id
+            $table->index('diocese_id');
         });
     }
 

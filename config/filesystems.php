@@ -38,8 +38,8 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'root' => base_path('../uploads'),
+            'url' => 'https://api.nacdded.org.ng/uploads',
             'visibility' => 'public',
             'throw' => false,
         ],

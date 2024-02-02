@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_refs', function (Blueprint $table) {
-            $table->id();
-            $table->string('ref');
-            $table->string('amt');
+            $table->string('ref')->primary();
             $table->string('time');
+            $table->integer('amt');
             $table->timestamps();
         });
     }

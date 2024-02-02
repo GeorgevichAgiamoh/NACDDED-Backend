@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('sex');
             $table->string('phn');
             $table->text('addr');
-            $table->text('diocese_id');
+            $table->string('diocese_id');
             $table->timestamps();
         });
     }

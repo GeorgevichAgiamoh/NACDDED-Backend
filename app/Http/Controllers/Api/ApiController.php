@@ -9,8 +9,11 @@ use App\Models\adsi_info;
 use App\Models\announcements;
 use App\Models\diocese_basic_data;
 use App\Models\diocese_general_data;
+use App\Models\event_regs;
 use App\Models\events;
+use App\Models\files;
 use App\Models\nacdded_info;
+use App\Models\password_reset_tokens;
 use App\Models\payment_refs;
 use App\Models\pays0;
 use App\Models\pays1;
@@ -21,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 /**
@@ -43,11 +47,33 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class ApiController extends Controller
 {
 
-    
+    /**
+     * @OA\Post(
+     *     path="/api/registerAdmin",
+     *     tags={"Unprotected"},
+     *     summary="Create the admin, DO NOT CALL, YOU DONT NEED THIS ENDPOINT !!!!",
+     *     @OA\Response(response="200", description="Login Successfully"),
+     * )
+     */
     public function registerAdmin(){
         User::create([
             "email"=> "admin@nacdded.org.ng",
             "password"=> bcrypt("123456"),
+        ]);
+        admin_user::create([
+            "email"=> 'admin@nacdded.org.ng',
+            "lname"=> 'NACDDED',
+            "oname"=> 'ADMIN USER',
+            "role"=> '0',
+            "pd1"=> '1',
+            "pd2"=> '1',
+            "pw1"=> '1',
+            "pw2"=> '1',
+            "pp1"=> '1',
+            "pp2"=> '1',
+            "pm1"=> '1',
+            "pm2"=> '1',
+            
         ]);
         $token = JWTAuth::attempt([
             "email"=> "admin@nacdded.org.ng",
@@ -100,14 +126,14 @@ class ApiController extends Controller
             "addr"=> "required",
         ]);
         //Save Data to DB
-        User::create([
+        $dusr = User::create([
             "email"=> $request->email,
             "password"=> bcrypt($request->password),
         ]);
-        $newDiocese = diocese_basic_data::create([
+        diocese_basic_data::create([
+            "diocese_id"=> strval($dusr->id),
             "name"=> $request->name,
             "phn"=> $request->phn,
-            "pwd"=> $request->password,
             "verif"=> "0",
         ]);//Create Diocese
         secretary_data::create([
@@ -118,7 +144,7 @@ class ApiController extends Controller
             "sex"=> "",
             "phn"=> $request->phn,
             "addr"=> $request->addr,
-            "diocese_id"=> $newDiocese->diocese_id,
+            "diocese_id"=> strval($dusr->id),
         ]);
         $token = JWTAuth::attempt([
             "email"=> $request->email,
@@ -127,7 +153,7 @@ class ApiController extends Controller
         if(!empty($token)){
             return response()->json([
                 "status"=> true,
-                "message"=> "User created successfully",
+                "message"=> "User created successfully: ".strval($dusr->id),
                 "token"=> $token
             ]);
         }
@@ -135,6 +161,103 @@ class ApiController extends Controller
         return response()->json([
             "status"=> true,
             "message"=> "User created successfully",
+        ]);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/sendPasswordResetEmail",
+     *     tags={"Unprotected"},
+     *     summary="Send reset email",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="email", type="string", format="email"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Password reset token sent to mail"),
+     * )
+     */
+    public function sendPasswordResetEmail(Request $request){
+        //Data validation
+        $request->validate([
+            "email"=>"required",
+        ]);
+        $eml = $request->email;
+        $pld = User::where("email","=", $eml)->first();
+        if($pld){
+            $token = Str::random(60); //Random reset token
+            password_reset_tokens::updateOrCreate(
+                ['email' => $eml],
+                ['email' => $eml, 'token' => $token]
+            );
+            $data = [
+                'name' => 'NACDDED USER',
+                'subject' => 'Reset your NACDDED password',
+                'body' => 'Please go to this link to reset your password. It will expire in 1 hour:',
+                'link'=>'https://portal.nacdded.org.ng/passwordreset/'.$token,
+            ];
+        
+            Mail::to($eml)->send(new SSSMails($data));
+            
+            return response()->json([
+                "status"=> true,
+                "message"=> "Password reset token sent to mail",
+            ]);   
+        }
+        // Respond
+        return response()->json([
+            "status"=> false,
+            "message"=> "Email not found",
+        ]);
+    }
+
+
+    /**
+     * @OA\Post(
+     *     path="/api/resetPassword",
+     *     tags={"Unprotected"},
+     *     summary="change user password",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="pwd", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Password reset token sent to mail"),
+     * )
+     */
+    public function resetPassword(Request $request){
+        //Data validation
+        $request->validate([
+            "token"=>"required",
+            "pwd"=>"required",
+        ]);
+        $pld = password_reset_tokens::where("token","=", $request->token)->first();
+        if($pld){
+            $email = $pld->email;
+            $usr = User::where("email","=", $email)->first();
+            if($usr){
+                $usr->update([
+                    "password"=>bcrypt($request->pwd),
+                ]);
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success. Please login again"
+                ]);
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "User not found",
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Denied. Invalid/Expired Token",
         ]);
     }
 
@@ -210,8 +333,6 @@ class ApiController extends Controller
             "email"=>"required|email",
             "password"=> "required",
         ]);
-        $mid = $request->memid;
-        $phn = $request->phn;
         $token = JWTAuth::attempt([
             "email"=> $request->email,
             "password"=> $request->password,
@@ -233,89 +354,57 @@ class ApiController extends Controller
 
     //Paystack Webhook (POST, formdata)
     public function paystackConf(Request $request){ 
-        $computedHash = hash_hmac('sha512', $request->getContent(), getenv('PAYSTACK_SECRET'));// Dont use json_encode($request->all()) in hashing
-        if ($computedHash == $request->header('x-paystack-signature')) {
-            $payload = json_decode($request->getContent(), true);
-            if($payload['event'] == "charge.success"){
-                $ref = $payload['data']['reference'];
-                $pld = payment_refs::where("ref","=", $ref)->first();
-                if(Str::startsWith($ref,"nacdded-")){ //Its for NAC
-                    if(!$pld){ // Its unique
-                        $payinfo = explode('-',$ref);
-                        $amt = $payinfo[2];
-                        $nm = $payload['data']['metadata']['name'];
-                        $tm = $payload['data']['metadata']['time'];
-                        payment_refs::create([
-                            "ref"=> $ref,
-                            "amt"=> $amt,
-                            "time"=> $tm,
+        $payload = json_decode($request->input('payload'), true);
+        if($payload['event'] == "charge.success"){
+            $ref = $payload['data']['reference'];
+            $pld = payment_refs::where("ref","=", $ref)->first();
+            if(Str::startsWith($ref,"nacdded-")){ //Its for NAC
+                if(!$pld){ // Its unique
+                    $payinfo = explode('-',$ref);
+                    $amt = $payinfo[2];
+                    $nm = $payload['data']['metadata']['name'];
+                    $tm = $payload['data']['metadata']['time'];
+                    payment_refs::create([
+                        "ref"=> $ref,
+                        "amt"=> $amt,
+                        "time"=> $tm,
+                    ]);
+                    $upl = [
+                        "diocese_id"=>$payinfo[3],
+                        "ref"=> $ref,
+                        "name"=> $nm,
+                        "time"=> $tm,
+                    ];
+                    if($payinfo[1]=='0'){
+                        $yr = $payload['data']['metadata']['year'];
+                        $upl['year'] = $yr;
+                        pays0::create($upl);
+                    }else{ // ie 1
+                        $ev = $payload['data']['metadata']['event']; //Event ID
+                        $upl['event'] = $ev;
+                        pays1::create($upl);
+                        //Create event_regs
+                        event_regs::create([
+                            'event_id' => $ev,
+                            'diocese_id'=> $payinfo[3],
+                            'proof'=> $ref,
+                            'verif'=>'0'
                         ]);
-                        $upl = [
-                            "email"=>$payinfo[3],
-                            "ref"=> $ref,
-                            "name"=> $nm,
-                            "time"=> $tm,
-                        ];
-                        if($payinfo[1]=='0'){
-                            $yr = $payload['data']['metadata']['year'];
-                            $upl['year'] = $yr;
-                            pays0::create($upl);
-                        }else{ // ie 1
-                            $ev = $payload['data']['metadata']['event'];
-                            $upl['event'] = $ev;
-                            pays1::create($upl);
-                        }
-                        Log::info('SUCCESS');
-                    }else{
-                        Log::info('PLD EXISTS'.json_encode($pld));
                     }
+                    Log::info('SUCCESS');
                 }else{
-                    Log::info('STR BAD '.$ref);
+                    Log::info('PLD EXISTS'.json_encode($pld));
                 }
             }else{
-                Log::info('EVENTS BAD '.$payload['event']);
+                Log::info('STR BAD '.$ref);
             }
-            return response()->json(['status' => 'success'], 200);
-        } else {
-            Log::info('Invalid hash '.$request->header('x-paystack-signature'));
-            Log::info('Computed '.$computedHash);
-            // Request is invalid
-            return response()->json(['status' => 'error'], 401);
+        }else{
+            Log::info('EVENTS BAD '.$payload['event']);
         }
+        return response()->json(['status' => 'success'], 200);
     }
 
     //---Protected from here
-
-
-    public function authAsAdmin(){
-        $user = auth()->user();
-        $apld = admin_user::where("email","=", $user->email)->first();
-        if($apld){
-            $customClaims = [
-                'role'=>$apld->role,
-                'pd1' => $apld->pd1, 
-                'pd2' => $apld->pd2, 
-                'pw1' => $apld->pw1, 
-                'pw2' => $apld->pw2, 
-                'pp1' => $apld->pp1, 
-                'pp2' => $apld->pp2, 
-                'pm1' => $apld->pm1, 
-                'pm2' => $apld->pm2, 
-            ];
-            $token = JWTAuth::customClaims($customClaims)->fromUser(auth()->user());
-            return response()->json([
-                "status"=> true,
-                "message"=> "Admin authorization granted",
-                "token"=> $token,
-            ]);
-        }
-        // Respond
-        return response()->json([
-            "status"=> false,
-            "message"=> "Failed"
-        ]);
-    }
-
 
 
     /**
@@ -339,19 +428,48 @@ class ApiController extends Controller
         ]);
     }
 
-    //POST (FILES)
+    /**
+     * @OA\Post(
+     *     path="/api/uploadFile",
+     *     tags={"Api"},
+     *     summary="Upload a file",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="file", type="file"),
+     *             @OA\Property(property="filename", type="string"),
+     *             @OA\Property(property="folder", type="string"),
+     *             @OA\Property(property="diocese_id", type="string"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
     public function uploadFile(Request $request){
         $request->validate([
             'file' => 'required', //|mimes:jpeg,png,jpg,gif,svg|max:2048
             'filename' => 'required',
             'folder' => 'required',
+            'diocese_id'=> 'required',
         ]);
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = $request->filename;
             $folder = $request->folder;
-            $file->move(public_path('uploads/'.$folder), $filename);
-            // Respond
+            if (!Storage::disk('public')->exists($folder)) {
+                // If it doesn't exist, create the directory
+                Storage::disk('public')->makeDirectory($folder);
+            }
+            Storage::disk('public')->put($folder.'/'. $filename, file_get_contents($file));
+            // Log It
+            files::create([
+                'diocese_id' => $request->diocese_id,
+                'file'=> $filename,
+                'folder'=> $folder,
+            ]);
             return response()->json([
                 "status"=> true,
                 "message"=> "Success"
@@ -362,6 +480,37 @@ class ApiController extends Controller
                 "message"=> "No file provided"
             ]);
         }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getFiles/{diocese_id}",
+     *     tags={"Api"},
+     *     summary="Get all Files belonging to a diocese ",
+     *     description="API: Use this endpoint to get all files by a diocese",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="diocese_id",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *          response="200",
+     *          description="Success",
+     *      ),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getFiles($uid){
+        $pld = files::where('diocese_id', $uid)->get();
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);
     }
 
     /**
@@ -398,9 +547,8 @@ class ApiController extends Controller
      * )
      */
     public function getFile($folder,$filename){
-        $filePath = public_path('uploads/'.$folder.'/'.$filename);
-        if (file_exists($filePath)) {
-            return response()->file($filePath);
+        if (Storage::disk('public')->exists($folder.'/'.$filename)) {
+            return response()->file(Storage::disk('public')->path($folder.'/'.$filename));
         } else {
             return response()->json([
                 "status" => false,
@@ -437,8 +585,7 @@ class ApiController extends Controller
      * )
      */
     public function fileExists($folder,$filename){
-        $filePath = public_path('uploads/'.$folder.'/'.$filename);
-        if (file_exists($filePath)) {
+        if (Storage::disk('public')->exists($folder.'/'.$filename)) {
             return response()->json([
                 "status" => true,
                 "message" => "Yes, it does",
@@ -465,6 +612,20 @@ class ApiController extends Controller
      *         description="Number of records to retrieve. If not specified, all will be returned",
      *         @OA\Schema(type="integer")
      *     ),
+     *     @OA\Parameter(
+     *         name="from",
+     *         in="query",
+     *         required=true,
+     *         description="Get events after mills ",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to",
+     *         in="query",
+     *         required=true,
+     *         description="Get events before mills ",
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
@@ -474,17 +635,192 @@ class ApiController extends Controller
         if(request()->has('count')) {
             $count = request()->input('count');
         }
-        $pld = null;
-        if($count == 0){
-            $pld = events::all();
-        }else{
-            $pld = events::latest()->take($count)->get();
+        if(request()->has('from') && request()->has('to')) {
+            $from = request()->input('from');
+            $to = request()->input('to');
+            $pld = null;
+            if($count == 0){
+                $pld = events::where('time', '>', $from)->where('time', '<', $to)->get();
+            }else{
+                $pld = events::where('time', '>', $from)->where('time', '<', $to)->take($count)->get();
+            }
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld,
+            ]);
         }
+        return response()->json([
+            "status"=> false,
+            "message"=> "from & to QP required",
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getEvent/{eventId}",
+     *     tags={"Api"},
+     *     summary="Get an Event",
+     *     description="Use this endpoint to get information about an event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="eventId",
+     *         in="path",
+     *         required=true,
+     *         description="Event ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getEvent($eventId){
+        $pld = events::where('id', $eventId)->first();
         // Respond
         return response()->json([
             "status"=> true,
             "message"=> "Success",
             "pld"=> $pld,
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getFreeEvent/{dioceseId}/{eventId}",
+     *     tags={"Api"},
+     *     summary="Register for a free event",
+     *     description="Use this endpoint to reg for a free event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese Id",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="eventId",
+     *         in="path",
+     *         required=true,
+     *         description="Event ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getFreeEvent($dioceseId,$eventId){
+        $pld = events::where('id', $eventId)->first();
+        if($pld){
+            if($pld->fee == '0'){
+                event_regs::create([
+                    'event_id' => $eventId,
+                    'diocese_id'=> $dioceseId,
+                    'proof'=> '', //Since free
+                    'verif'=>'0'
+                ]);
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                ]);
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "Event is not free",
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Event not found",
+        ]);
+    }
+
+     /**
+     * @OA\Get(
+     *     path="/api/manualRegEvent/{dioceseId}/{eventId}",
+     *     tags={"Api"},
+     *     summary="Manual reg for event (file proof)",
+     *     description="Use this endpoint to manually reg for a an event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese Id",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="eventId",
+     *         in="path",
+     *         required=true,
+     *         description="Event ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function manualRegEvent($dioceseId,$eventId){
+        $pld = events::where('id', $eventId)->first();
+        if($pld){
+            event_regs::create([
+                'event_id' => $eventId,
+                'diocese_id'=> $dioceseId,
+                'proof'=> 'f', //Since free
+                'verif'=>'0'
+            ]);
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Event not found",
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/hasDioceseRegisteredEvent/{dioceseId}/{eventId}",
+     *     tags={"Api"},
+     *     summary="Check if diocese has registred for an event",
+     *     description="Use this endpoint to check if diocese has registred for an event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese Id",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="eventId",
+     *         in="path",
+     *         required=true,
+     *         description="Event ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function hasDioceseRegisteredEvent($dioceseId,$eventId){
+        $recordExists = event_regs::where('event_id', $eventId)
+            ->where('diocese_id', $dioceseId)
+            ->exists();
+        if($recordExists){
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> ["exists"=>"1"],
+            ]);
+        }
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> ["exists"=>"0"],
         ]);
     }
 
@@ -502,7 +838,6 @@ class ApiController extends Controller
      *             @OA\Property(property="diocese_id", type="string", description="get Diocese ID from getSecretaryInfo endpoint"),
      *             @OA\Property(property="name", type="string", description="Name of the diocese"),
      *             @OA\Property(property="phn", type="string", description="Phone number of the diocese"),
-     *             @OA\Property(property="pwd", type="string", description="Password for verification"),
      *             @OA\Property(property="verif", type="string", description="Verification status (0 or 1)"),
      *         )
      *     ),
@@ -515,27 +850,19 @@ class ApiController extends Controller
             "diocese_id"=>"required",
             "name"=> "required",
             "phn"=> "required",
-            "pwd"=> "required",
             "verif"=> "required",
         ]);
-        $usr = User::where("id", $request->diocese_id)->first();
-        if($usr){
-            $usr->update([
-                "password"=>bcrypt($request->pwd),
+        $dbd = diocese_basic_data::where("diocese_id", $request->diocese_id)->first();
+        if($dbd){
+            $dbd->update([
+                "name"=> $request->name,
+                "phn"=> $request->phn,
+                "verif"=> $request->verif,
             ]);
-            $dbd = diocese_basic_data::where("diocese_id", $request->diocese_id)->first();
-            if($dbd){
-                $dbd->update([
-                    "name"=> $request->name,
-                    "phn"=> $request->phn,
-                    "pwd"=> $request->pwd,
-                    "verif"=> $request->verif,
-                ]);
-                return response()->json([
-                    "status"=> true,
-                    "message"=> "Success. Please login again"
-                ]);
-            }
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success. Please login again"
+            ]);
         }
         return response()->json([
             "status"=> false,
@@ -679,7 +1006,7 @@ class ApiController extends Controller
             "diocese_id"=>"required",
         ]);
         $pld = User::where("email","=", $request->email)->first();
-        if(!$pld){
+        if(!$pld){ //Secretary is new
             User::create([
                 "email"=> $request->email,
                 "password"=> bcrypt("123456"),
@@ -708,7 +1035,7 @@ class ApiController extends Controller
      *     path="/api/getSecretaryInfo",
      *     tags={"Api"},
      *     summary="Get Secretary Info",
-     *     description="Use this endpoint to get information about a secretary.",
+     *     description="Use this endpoint to get information about a secretary. Itll include a diocese id ",
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="email",
@@ -776,17 +1103,17 @@ class ApiController extends Controller
      *     description="Use this endpoint to get all payments by a diocese.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the diocese",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
      *         name="payId",
      *         in="path",
      *         required=true,
      *         description="ID of the payment record to be retrieved",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
-     *         required=true,
-     *         description="Email of the diocese",
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
@@ -807,36 +1134,130 @@ class ApiController extends Controller
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
-    public function getDiocesePayments($payId){
-        if(request()->has('email')) {
+    public function getDiocesePayments($dioceseId,$payId){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = null;
+        if($payId == '0'){
+            $pld = pays0::where('diocese_id', $dioceseId)->skip($start)->take($count)->get();
+        }else{
+            $pld = pays1::where('diocese_id', $dioceseId)->skip($start)->take($count)->get();
+        }
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);  
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getEventRegs/{eventID}",
+     *     tags={"Api"},
+     *     summary="Get list of registration for an event",
+     *     description="Use this endpoint to get list of registration for an event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="eventID",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the event (ie the time column)",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getEventRegs($eventID){
+        $pw1 = auth()->payload()->get('pw1');
+        if ( $pw1!=null  && $pw1=='1') { //Can read from dir
             $start = 0;
-            $count = 10000;
+            $count = 20;
             if(request()->has('start') && request()->has('count')) {
                 $start = request()->input('start');
                 $count = request()->input('count');
             }
-            $eml = request()->input('email');
-            $pld = null;
-            if($payId == '0'){
-                $pld = pays0::where('email', $eml)->skip($start)->take($count)->get();
-            }else{
-                $pld = pays1::where('email', $eml)->skip($start)->take($count)->get();
-            }
+            $pld = event_regs::where('event_id', $eventID)->skip($start)->take($count)->get();
             return response()->json([
                 "status"=> true,
                 "message"=> "Success",
                 "pld"=> $pld,
-            ]);  
+            ]); 
         }
         return response()->json([
             "status"=> false,
-            "message"=> "Email required",
-        ]);
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getDioceseEvents",
+     *     tags={"Api"},
+     *     summary="Get Diocese Registered Events",
+     *     description="Use this endpoint to get all payments by a diocese.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the diocese",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getDioceseEventRegs($dioceseId){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = event_regs::where('diocese_id', $dioceseId)->skip($start)->take($count)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);  
     }
 
     //GET
-    public function getMemDuesByYear($memid, $year){
-        $dues = pays1::where('memid', $memid)->where('year', $year)->first();
+    public function getMemDuesByYear($dioceseId, $year){
+        $dues = pays0::where('diocese_id', $dioceseId)->where('year', $year)->first();
         return response()->json([
             "status"=> true,
             "message"=> "Success",
@@ -851,38 +1272,6 @@ class ApiController extends Controller
 
     //--------------- ADMIN CODES
 
-    /**
-     * @OA\Post(
-     *     path="/api/setFirstAdminUserInfo",
-     *     tags={"Unprotected"},
-     *     description="LOGIN INFO: email:admin@nacdded.org.ng, pwd:123456",
-     *     summary="Create the first admin",
-     *     @OA\Response(response="200", description="Admin created successfully"),
-     * )
-     */
-    public function setFirstAdminUserInfo(){
-        admin_user::updateOrCreate(
-            ["email"=> 'admin@nacdded.org.ng',],
-            [
-            "lname"=> 'NACDDED',
-            "oname"=> 'Stable Shield',
-            "role"=> '0',
-            "pd1"=> '1',
-            "pd2"=> '1',
-            "pw1"=> '1',
-            "pw2"=> '1',
-            "pp1"=> '1',
-            "pp2"=> '1',
-            "pm1"=> '1',
-            "pm2"=> '1',
-            
-        ]);
-        // Respond
-        return response()->json([
-            "status"=> true,
-            "message"=> "First Admin User Created"
-        ]);
-    }
 
     /**
      * @OA\Get(
@@ -898,16 +1287,14 @@ class ApiController extends Controller
     public function getHighlights(){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
-            // $totalUsers = User::count();
-            // $totalMales = diocese_general_data::where('sex', 'M')->count();
-            // $totalFemales = member_general_data::where('sex', 'F')->count();
+            $totalSchools = schools::count();
+            $totalDiocese = diocese_basic_data::count();
             return response()->json([
                 "status"=> true,
                 "message"=> "Success",
                 "pld"=> [
-                    'totalUsers'=>'...',
-                    'totalMales'=>'...',
-                    'totalFemales'=> '...'
+                    'totalSchools'=>$totalSchools,
+                    'totalDiocese'=>$totalDiocese
                 ],
             ]);   
         }
@@ -1202,7 +1589,7 @@ class ApiController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/setEvents",
+     *     path="/api/setEvent",
      *     tags={"Admin"},
      *     summary="Create Event",
      *     description="ADMIN: Use this endpoint to create an event.",
@@ -1212,11 +1599,11 @@ class ApiController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="title", type="string", description="Title of the event"),
-     *             @OA\Property(property="time", type="string", description="Time of the event"),
+     *             @OA\Property(property="time", type="integer", description="Time of the event"),
      *             @OA\Property(property="venue", type="string", description="Venue of the event"),
      *             @OA\Property(property="fee", type="string", description="Fee for the event"),
-     *             @OA\Property(property="start", type="string", description="Start time of the event"),
-     *             @OA\Property(property="end", type="string", description="End time of the event"),
+     *             @OA\Property(property="start", type="integer", description="Start time of the event"),
+     *             @OA\Property(property="end", type="integer", description="End time of the event"),
      *             @OA\Property(property="theme", type="string", description="Theme of the event"),
      *             @OA\Property(property="speakers", type="string", description="Speakers in the event. I recommend comma separated"),
      *         )
@@ -1225,7 +1612,7 @@ class ApiController extends Controller
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
-    public function setEvents(Request $request){
+    public function setEvent(Request $request){
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
               $request->validate([
@@ -1238,7 +1625,7 @@ class ApiController extends Controller
                 "theme"=> "required",
                 "speakers"=> "required",
             ]);
-            events::create([
+            $ev = events::create([
                 "title"=> $request->title,
                 "time"=> $request->time,
                 "venue"=> $request->venue,
@@ -1251,7 +1638,8 @@ class ApiController extends Controller
             // Respond
             return response()->json([
                 "status"=> true,
-                "message"=> "Event Added"
+                "message"=> "Event Added",
+                "pld"=>['id'=>strval($ev->id)]
             ]);
         }
         return response()->json([
@@ -1301,7 +1689,7 @@ class ApiController extends Controller
                 "time"=> $tm,
             ]);*/
             $upl = [
-                "email"=>$payinfo[3],
+                "diocese_id"=>$payinfo[3],
                 "ref"=> $ref,
                 "name"=> $nm,
                 "time"=> $tm,
@@ -1310,7 +1698,7 @@ class ApiController extends Controller
                 $yr = $request->year;
                 $upl['year'] = $yr;
                 pays0::create($upl);
-            }else{ // ie 2
+            }else{ //TODO event_regs
                 $ev = $request->event;
                 $upl['event'] = $ev;
                 pays1::create($upl);

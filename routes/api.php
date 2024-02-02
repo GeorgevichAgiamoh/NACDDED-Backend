@@ -30,6 +30,8 @@ Route::post('login', [ApiController::class,'login']);
 Route::post('adminlogin', [ApiController::class,'adminlogin']);
 Route::post('setFirstAdminUserInfo', [ApiController::class,'setFirstAdminUserInfo']); // For first Admin (call on postman)
 Route::post('paystackConf', [ApiController::class,'paystackConf']);
+Route::post('sendPasswordResetEmail', [ApiController::class,'sendPasswordResetEmail']);
+Route::post('resetPassword', [ApiController::class,'resetPassword']);
 
 
 // - PROTECTED
@@ -49,7 +51,7 @@ Route::group([
     Route::post('setAnnouncements', [ApiController::class,'setAnnouncements']);
     Route::post('setAdmin', [ApiController::class,'setAdmin']);
     Route::post('sendMail', [ApiController::class,'sendMail']);
-    Route::post('setEvents', [ApiController::class,'setEvents']);
+    Route::post('setEvent', [ApiController::class,'setEvent']);
     Route::post('uploadPayment', [ApiController::class,'uploadPayment']);
     Route::post('setNacddedInfo', [ApiController::class,'setNacddedInfo']);
     
@@ -62,10 +64,18 @@ Route::group([
     Route::get('fileExists/{folder}/{filename}', [ApiController::class, 'fileExists']);
     Route::get('getAnnouncements', [ApiController::class, 'getAnnouncements']);
     Route::get('getEvents', [ApiController::class, 'getEvents']);
-    Route::get('getDiocesePayments/{payId}', [ApiController::class, 'getDiocesePayments']);
+    Route::get('getEvent/{eventId}', [ApiController::class, 'getEvent']);
+    Route::get('getDiocesePayments/{dioceseId}/{payId}', [ApiController::class, 'getDiocesePayments']);
     Route::get('getNacddedInfo', [ApiController::class, 'getNacddedInfo']);
     Route::get('getMySchools/{dioceseId}', [ApiController::class, 'getMySchools']);
+    Route::get('getFiles/{uid}', [ApiController::class, 'getFiles']);
+    Route::get('getMemDuesByYear/{dioceseId}/{year}', [ApiController::class, 'getMemDuesByYear']);
+    Route::get('getDioceseEventRegs/{dioceseId}', [ApiController::class, 'getDioceseEventRegs']);
+    Route::get('getFreeEvent/{dioceseId}/{eventID}', [ApiController::class, 'getFreeEvent']);
+    Route::get('hasDioceseRegisteredEvent/{dioceseId}/{eventID}', [ApiController::class, 'hasDioceseRegisteredEvent']);
+    Route::get('manualRegEvent/{dioceseId}/{eventID}', [ApiController::class, 'manualRegEvent']);
 
+    
 
     Route::get('getHighlights', [ApiController::class, 'getHighlights']);
     Route::get('getAdmins', [ApiController::class, 'getAdmins']);
@@ -73,6 +83,7 @@ Route::group([
     Route::get('removeAdmin/', [ApiController::class, 'removeAdmin']);
     Route::get('getPayments/{payId}', [ApiController::class, 'getPayments']);
     Route::get('getSchools', [ApiController::class, 'getSchools']);
+    Route::get('getEventRegs/{eventID}', [ApiController::class, 'getEventRegs']);
 
     
     Route::get('refresh', [ApiController::class,'refreshToken']);

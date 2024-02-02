@@ -14,6 +14,20 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/registerAdmin": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Create the admin, DO NOT CALL, YOU DONT NEED THIS ENDPOINT !!!!",
+                "operationId": "8af28a37c3fc8371c45862ce14f9a92e",
+                "responses": {
+                    "200": {
+                        "description": "Login Successfully"
+                    }
+                }
+            }
+        },
         "/api/register": {
             "post": {
                 "tags": [
@@ -58,6 +72,68 @@
                 "responses": {
                     "200": {
                         "description": "Login Successfully"
+                    }
+                }
+            }
+        },
+        "/api/sendPasswordResetEmail": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "Send reset email",
+                "operationId": "e9878d15d2885a776693bef83a413093",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset token sent to mail"
+                    }
+                }
+            }
+        },
+        "/api/resetPassword": {
+            "post": {
+                "tags": [
+                    "Unprotected"
+                ],
+                "summary": "change user password",
+                "operationId": "c14a68bedc471d16001f1444df4acb37",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "token": {
+                                        "type": "string"
+                                    },
+                                    "pwd": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset token sent to mail"
                     }
                 }
             }
@@ -144,6 +220,86 @@
                                 "schema": {}
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/uploadFile": {
+            "post": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Upload a file",
+                "operationId": "85868b2ba0eafe3b519bb2fb344ffcb6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "type": "file"
+                                    },
+                                    "filename": {
+                                        "type": "string"
+                                    },
+                                    "folder": {
+                                        "type": "string"
+                                    },
+                                    "diocese_id": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getFiles/{diocese_id}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get all Files belonging to a diocese ",
+                "description": "API: Use this endpoint to get all files by a diocese",
+                "operationId": "985e918e2a4da816dbe382fa884ef2f1",
+                "parameters": [
+                    {
+                        "name": "diocese_id",
+                        "in": "path",
+                        "description": "Diocese ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
                     },
                     "401": {
                         "description": "Unauthorized"
@@ -274,6 +430,207 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Get events after mills ",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Get events before mills ",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getEvent/{eventId}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get an Event",
+                "description": "Use this endpoint to get information about an event.",
+                "operationId": "6b34e06a5f5d6c960f81c97c7e9ddc08",
+                "parameters": [
+                    {
+                        "name": "eventId",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getFreeEvent/{dioceseId}/{eventId}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Register for a free event",
+                "description": "Use this endpoint to reg for a free event.",
+                "operationId": "f495aa700d968f4042dc2ede851ba570",
+                "parameters": [
+                    {
+                        "name": "dioceseId",
+                        "in": "path",
+                        "description": "Diocese Id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "eventId",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/manualRegEvent/{dioceseId}/{eventId}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Manual reg for event (file proof)",
+                "description": "Use this endpoint to manually reg for a an event.",
+                "operationId": "3f0ba25cf423a7caa6f269c0e00b8866",
+                "parameters": [
+                    {
+                        "name": "dioceseId",
+                        "in": "path",
+                        "description": "Diocese Id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "eventId",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/hasDioceseRegisteredEvent/{dioceseId}/{eventId}": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Check if diocese has registred for an event",
+                "description": "Use this endpoint to check if diocese has registred for an event.",
+                "operationId": "ad8443750a25652201c960997b4911cc",
+                "parameters": [
+                    {
+                        "name": "dioceseId",
+                        "in": "path",
+                        "description": "Diocese Id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "eventId",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -320,10 +677,6 @@
                                     },
                                     "phn": {
                                         "description": "Phone number of the diocese",
-                                        "type": "string"
-                                    },
-                                    "pwd": {
-                                        "description": "Password for verification",
                                         "type": "string"
                                     },
                                     "verif": {
@@ -553,7 +906,7 @@
                     "Api"
                 ],
                 "summary": "Get Secretary Info",
-                "description": "Use this endpoint to get information about a secretary.",
+                "description": "Use this endpoint to get information about a secretary. Itll include a diocese id ",
                 "operationId": "978cf9603aa2bf40db098cb629435e36",
                 "parameters": [
                     {
@@ -635,18 +988,18 @@
                 "operationId": "0b229dfebaea3399dae9951200016fb8",
                 "parameters": [
                     {
-                        "name": "payId",
+                        "name": "dioceseId",
                         "in": "path",
-                        "description": "ID of the payment record to be retrieved",
+                        "description": "ID of the diocese",
                         "required": true,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "email",
-                        "in": "query",
-                        "description": "Email of the diocese",
+                        "name": "payId",
+                        "in": "path",
+                        "description": "ID of the payment record to be retrieved",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -691,19 +1044,118 @@
                 ]
             }
         },
-        "/api/setFirstAdminUserInfo": {
-            "post": {
+        "/api/getEventRegs/{eventID}": {
+            "get": {
                 "tags": [
-                    "Unprotected"
+                    "Api"
                 ],
-                "summary": "Create the first admin",
-                "description": "LOGIN INFO: email:admin@nacdded.org.ng, pwd:123456",
-                "operationId": "755da55942eba539d695da81491d03b0",
+                "summary": "Get list of registration for an event",
+                "description": "Use this endpoint to get list of registration for an event.",
+                "operationId": "27fb5115049d22fa488387eb1bc5d5ae",
+                "parameters": [
+                    {
+                        "name": "eventID",
+                        "in": "path",
+                        "description": "ID of the event (ie the time column)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Start index for limiting the result",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Number of records to retrieve",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Admin created successfully"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getDioceseEvents": {
+            "get": {
+                "tags": [
+                    "Api"
+                ],
+                "summary": "Get Diocese Registered Events",
+                "description": "Use this endpoint to get all payments by a diocese.",
+                "operationId": "630d93843872c0bf745476daff7f5a1b",
+                "parameters": [
+                    {
+                        "name": "dioceseId",
+                        "in": "path",
+                        "description": "ID of the diocese",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start",
+                        "in": "query",
+                        "description": "Start index for limiting the result",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Number of records to retrieve",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/getHighlights": {
@@ -1006,14 +1458,14 @@
                 ]
             }
         },
-        "/api/setEvents": {
+        "/api/setEvent": {
             "post": {
                 "tags": [
                     "Admin"
                 ],
                 "summary": "Create Event",
                 "description": "ADMIN: Use this endpoint to create an event.",
-                "operationId": "49719329887ee9c01de0d3f6ffcbf6e2",
+                "operationId": "7df3abcbb8a98672e146ebf3c8e77cd2",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1026,7 +1478,7 @@
                                     },
                                     "time": {
                                         "description": "Time of the event",
-                                        "type": "string"
+                                        "type": "integer"
                                     },
                                     "venue": {
                                         "description": "Venue of the event",
@@ -1038,11 +1490,11 @@
                                     },
                                     "start": {
                                         "description": "Start time of the event",
-                                        "type": "string"
+                                        "type": "integer"
                                     },
                                     "end": {
                                         "description": "End time of the event",
-                                        "type": "string"
+                                        "type": "integer"
                                     },
                                     "theme": {
                                         "description": "Theme of the event",

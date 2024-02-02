@@ -8,6 +8,6 @@ class pays1 extends Model
 {
     protected $table = 'pays1'; 
     protected $fillable = [
-        'email','ref', 'name', 'time', 'event'
+        'diocese_id','ref', 'name', 'time', 'event','amt'
     ];
 }
