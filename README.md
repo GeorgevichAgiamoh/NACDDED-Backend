@@ -50,8 +50,6 @@ All values are in string (no date, or int). Not relevant to the frontend enginee
 
 - (,,) means implied
 
-- For ids (like memid and adminId) please pass email instead. Though its still in debate if an ID system will be in place
-
 - QP means query param
 
 - All data include the `created_at` and `updated_at` prop (UTC date). For instance, you can use it to get the date of initial registration 
@@ -178,7 +176,7 @@ nacdded-(payId)-(amt)-(email)-(mills)
 
 ## Data Structure
 
-> **NOTE** While this data structure is still relevant, i stopped updating it late Jan 2024 - New docs are on the swagger UI 
+> **NOTE** While this data structure is still relevant, i stopped updating it late Jan 2024 - New docs are on the swagger UI [here](https://api.nacdded.org.ng/api/documentation) 
 
 
 ``UNPROTECTED``

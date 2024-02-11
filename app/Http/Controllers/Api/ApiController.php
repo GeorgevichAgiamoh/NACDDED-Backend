@@ -695,8 +695,8 @@ class ApiController extends Controller
      * @OA\Get(
      *     path="/api/getEventStat",
      *     tags={"Admin"},
-     *     summary="Get Highlights",
-     *     description="ADMIN: Use this endpoint to get information about highlights.",
+     *     summary="Get Event Statistics",
+     *     description="ADMIN: Use this endpoint to get information about events.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -824,7 +824,7 @@ class ApiController extends Controller
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
-    public function manualRegEvent($dioceseId,$eventId){
+    public function manualRegEvent($dioceseId,$eventId){ //TODO Remove
         $pld = events::where('id', $eventId)->first();
         if($pld){
             event_regs::create([
@@ -842,6 +842,56 @@ class ApiController extends Controller
             "status"=> false,
             "message"=> "Event not found",
         ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/approveEventReg/{dioceseId}/{eventId}",
+     *     tags={"Admin"},
+     *     summary="Approve Event Reg",
+     *     description="ADMIN: Use this endpoint to approve an event registration.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="dioceseId",
+     *         in="path",
+     *         required=true,
+     *         description="Diocese Id",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="eventId",
+     *         in="path",
+     *         required=true,
+     *         description="Event ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function approveEventReg($dioceseId,$eventId){
+        $pw1 = auth()->payload()->get('pw1');
+        if ( $pw1!=null  && $pw1=='1') { 
+            $pld = event_regs::where('event_id', $eventId)
+            ->where('diocese_id', $dioceseId)->first();
+            if($pld){
+                $pld->update([
+                    "verif"=> '1',
+                ]);
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                ]);
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "Record not found",
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
     }
 
     /**
@@ -1305,7 +1355,7 @@ class ApiController extends Controller
      */
     public function getEventRegs($eventID){
         $pw1 = auth()->payload()->get('pw1');
-        if ( $pw1!=null  && $pw1=='1') { //Can read from dir
+        if ( $pw1!=null  && $pw1=='1') { 
             $start = 0;
             $count = 20;
             if(request()->has('start') && request()->has('count')) {
@@ -1324,6 +1374,44 @@ class ApiController extends Controller
             "message"=> "Access denied"
         ],401);
     }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/getEventRegStat/{eventID}",
+     *     tags={"Admin"},
+     *     summary="Get Total No of regs for the eventID",
+     *     description="ADMIN: Use this endpoint to get information about the event.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="eventID",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the event",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getEventRegStat($eventID){
+        $pw1 = auth()->payload()->get('pw1');
+        if ( $pw1!=null  && $pw1=='1') {
+            $totalRegs = event_regs::where('event_id', $eventID)->count();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> [
+                    'totalRegs'=>$totalRegs
+                ],
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
 
     /**
      * @OA\Get(
@@ -1434,7 +1522,6 @@ class ApiController extends Controller
                 $ev = $pld->meta;
                 $upl['event'] = $ev;
                 pays1::create($upl);
-                //TODO Log Event_Reg
                 event_regs::create([
                     'event_id' => $ev,
                     'diocese_id'=> $payinfo[3],
@@ -1504,7 +1591,7 @@ class ApiController extends Controller
      *     path="/api/getHighlights",
      *     tags={"Admin"},
      *     summary="Get Highlights",
-     *     description="ADMIN: Use this endpoint to get information about highlights.",
+     *     description="ADMIN: Use this endpoint to get highlights.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
      *     @OA\Response(response="401", description="Unauthorized"),
@@ -1712,10 +1799,9 @@ class ApiController extends Controller
         $role = auth()->payload()->get('role');
         if ( $role!=null  && $role=='0') {
             $request->validate([
-                "memid"=>"required",
+                "email"=>"required",
                 "lname"=>"required",
                 "oname"=> "required",
-                "eml"=> "required",
                 "role"=>"required",
                 "pd1"=> "required",
                 "pd2"=> "required",
@@ -1727,11 +1813,10 @@ class ApiController extends Controller
                 "pm2"=>"required",
             ]);
             admin_user::updateOrCreate(
-                ["memid"=> $request->memid,],
+                ["email"=> $request->email,],
                 [
                 "lname"=> $request->lname,
                 "oname"=> $request->oname,
-                "eml"=> $request->eml,
                 "role"=> $request->role,
                 "pd1"=> $request->pd1,
                 "pd2"=> $request->pd2,
@@ -1961,7 +2046,7 @@ class ApiController extends Controller
                 $yr = $request->year;
                 $upl['year'] = $yr;
                 pays0::create($upl);
-            }else{ //TODO event_regs
+            }else{
                 $ev = $request->event;
                 $upl['event'] = $ev;
                 pays1::create($upl);

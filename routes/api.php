@@ -95,6 +95,8 @@ Route::group([
     Route::get('getEventStat', [ApiController::class, 'getEventStat']);
     Route::get('deleteEvent/{eventId}', [ApiController::class, 'deleteEvent']);
     Route::get('searchPayment', [ApiController::class, 'searchPayment']);
+    Route::get('getEventRegStat/{eventId}', [ApiController::class, 'getEventRegStat']);
+    Route::get('approveEventReg/{dioceseId}/{eventID}', [ApiController::class, 'approveEventReg']);
 
     
     Route::get('refresh', [ApiController::class,'refreshToken']);
