@@ -1,5 +1,6 @@
 # NACDDED Backend
 
+
 ## Info
 Company: Stable Shield Solutions
 
@@ -176,6 +177,8 @@ nacdded-(payId)-(amt)-(email)-(mills)
 
 
 ## Data Structure
+
+> **NOTE** While this data structure is still relevant, i stopped updating it late Jan 2024 - New docs are on the swagger UI 
 
 
 ``UNPROTECTED``

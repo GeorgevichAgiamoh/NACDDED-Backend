@@ -16,6 +16,7 @@ use App\Models\nacdded_info;
 use App\Models\password_reset_tokens;
 use App\Models\payment_refs;
 use App\Models\pays0;
+use App\Models\pays9;
 use App\Models\pays1;
 use App\Models\schools;
 use App\Models\secretary_data;
@@ -374,6 +375,7 @@ class ApiController extends Controller
                         "ref"=> $ref,
                         "name"=> $nm,
                         "time"=> $tm,
+                        "amt"=> intval($amt),
                     ];
                     if($payinfo[1]=='0'){
                         $yr = $payload['data']['metadata']['year'];
@@ -631,19 +633,16 @@ class ApiController extends Controller
      * )
      */
     public function getEvents(){
-        $count = 0;
-        if(request()->has('count')) {
+        $start = 0;
+        $count = 5;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
             $count = request()->input('count');
         }
         if(request()->has('from') && request()->has('to')) {
             $from = request()->input('from');
             $to = request()->input('to');
-            $pld = null;
-            if($count == 0){
-                $pld = events::where('time', '>', $from)->where('time', '<', $to)->get();
-            }else{
-                $pld = events::where('time', '>', $from)->where('time', '<', $to)->take($count)->get();
-            }
+            $pld = events::where('time', '>', $from)->where('time', '<', $to)->skip($start)->take($count)->get();
             // Respond
             return response()->json([
                 "status"=> true,
@@ -655,6 +654,70 @@ class ApiController extends Controller
             "status"=> false,
             "message"=> "from & to QP required",
         ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/deleteEvent/eventId",
+     *     tags={"Admin"},
+     *     summary="Remove an event",
+     *     description="ADMIN: !!! Wont delete registration .",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         description="Email of the admin to be removed",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Admin removed successfully"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function deleteEvent($eventId){
+        $pw2 = auth()->payload()->get('pw2');
+        if ( $pw2!=null && $pw2=='1') {
+            events::where('id', $eventId)->delete();
+            event_regs::where('event_id', $eventId)->delete();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/getEventStat",
+     *     tags={"Admin"},
+     *     summary="Get Highlights",
+     *     description="ADMIN: Use this endpoint to get information about highlights.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getEventStat(){
+        $pw1 = auth()->payload()->get('pw1');
+        if ( $pw1!=null  && $pw1=='1') {
+            $totalEvents = events::count();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> [
+                    'totalEvents'=>$totalEvents
+                ],
+            ]);  
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
     }
 
     /**
@@ -821,6 +884,60 @@ class ApiController extends Controller
             "status"=> true,
             "message"=> "Success",
             "pld"=> ["exists"=>"0"],
+        ]);
+    }
+
+     /**
+     * @OA\Post(
+     *     path="/api/registerOfflinePayment",
+     *     tags={"Api"},
+     *     summary="Register an offline payment",
+     *     description="Register an offline payment to be approved by admin",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="ref", type="string", description="Properly formatted payment ref"),
+     *             @OA\Property(property="name", type="string", description="Name of the diocese"),
+     *             @OA\Property(property="time", type="string", description="Time paid in millis"),
+     *             @OA\Property(property="proof", type="string", description="Proof of payment (use `f` for File)"),
+     *             @OA\Property(property="meta", type="string", description="Depends on the type of payment - year or event"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function registerOfflinePayment(Request $request){ 
+        $request->validate([
+            "ref"=> "required",
+            "name"=> "required",
+            "time"=> "required",
+            "proof"=> "required",
+            "meta"=> "required",
+        ]);
+        $ref = $request->ref;
+        $payinfo = explode('-',$ref);
+        $amt = $payinfo[2];
+        $nm = $request->name; 
+        $tm = $request->time;
+        $typ = $payinfo[1]; 
+        $upl = [
+            "diocese_id"=>$payinfo[3],
+            "type"=>$typ,
+            "ref"=> $ref,
+            "name"=> $nm,
+            "time"=> $tm,
+            "proof"=> $request->proof,
+            "amt"=> intval($amt),
+            "meta"=> $request->meta,
+        ];
+        pays9::create($upl);
+        // Respond
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success"
         ]);
     }
 
@@ -1273,6 +1390,115 @@ class ApiController extends Controller
     //--------------- ADMIN CODES
 
 
+     /**
+     * @OA\Post(
+     *     path="/api/approveOfflinePayment",
+     *     tags={"Admin"},
+     *     summary="Approve offline payment",
+     *     description="ADMIN: To approve an offline payment (the payment will auto-resolve to its `type` - ie dues/event)",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="string", description="Payment ID"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function approveOfflinePayment(Request $request){ 
+        if ( $this->permOk('pp2')) {
+            $request->validate([
+                "id"=> "required",
+            ]);
+            $pld = pays9::where('id', $request->id)->first();
+            $ref = $pld->ref;
+            $payinfo = explode('-',$ref);
+            $amt = $payinfo[2];
+            $nm = $pld->name; 
+            $tm = $pld->time;
+            $upl = [
+                "diocese_id"=>$payinfo[3],
+                "ref"=> $ref,
+                "name"=> $nm,
+                "time"=> $tm,
+                "amt"=> intval($amt)
+            ];
+            if ($payinfo[1]=='0'){
+                $yr = $pld->meta;
+                $upl['year'] = $yr;
+                pays0::create($upl);
+            }else{ // ie 1
+                $ev = $pld->meta;
+                $upl['event'] = $ev;
+                pays1::create($upl);
+                //TODO Log Event_Reg
+                event_regs::create([
+                    'event_id' => $ev,
+                    'diocese_id'=> $payinfo[3],
+                    'proof'=> $ref,
+                    'verif'=>'1'
+                ]);
+
+            }
+            Pays9::where('id', $request->id)->delete();
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/deleteOfflinePayment",
+     *     tags={"Admin"},
+     *     summary="Delete/Deny offline payment",
+     *     description="ADMIN: To delete/deny an offline payment ",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="string", description="Payment ID"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function deleteOfflinePayment(Request $request){ 
+        if ( $this->permOk('pp2')) {
+            $request->validate([
+                "id"=> "required",
+            ]);
+            $pld = pays9::where('id', $request->id)->first();
+            Pays9::where('id', $request->id)->delete();
+            if (Storage::disk('public')->exists('pends' . '/' . $pld->diocese_id.'_'.$pld->time)) {
+                Storage::disk('public')->delete('pends' . '/' . $pld->diocese_id.'_'.$pld->time);
+            }
+            // Delete Log
+            files::where('folder', 'pends')->where('file', $pld->diocese_id.'_'.$pld->time)->delete();
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+
     /**
      * @OA\Get(
      *     path="/api/getHighlights",
@@ -1341,6 +1567,42 @@ class ApiController extends Controller
             return response()->json([
                 "status"=> true,
                 "message"=> "Announcement Added"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/deleteAnnouncements",
+     *     tags={"Admin"},
+     *     summary="Delete Announcement",
+     *     description="ADMIN: Use this endpoint to delete an announcement.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="string", description="ID of the announcement"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function deleteAnnouncements(Request $request){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            $request->validate([
+                "id"=>"required",
+            ]);
+            announcements::where('id', $request->id)->delete();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success"
             ]);
         }
         return response()->json([
@@ -1608,7 +1870,7 @@ class ApiController extends Controller
      *             @OA\Property(property="speakers", type="string", description="Speakers in the event. I recommend comma separated"),
      *         )
      *     ),
-     *     @OA\Response(response="200", description="Event created successfully"),
+     *     @OA\Response(response="200", description="event id is returned as payload "),
      *     @OA\Response(response="401", description="Unauthorized"),
      * )
      */
@@ -1693,6 +1955,7 @@ class ApiController extends Controller
                 "ref"=> $ref,
                 "name"=> $nm,
                 "time"=> $tm,
+                "amt"=> intval($amt),
             ];
             if($payinfo[1]=='0'){
                 $yr = $request->year;
@@ -1702,12 +1965,66 @@ class ApiController extends Controller
                 $ev = $request->event;
                 $upl['event'] = $ev;
                 pays1::create($upl);
+                event_regs::create([
+                    'event_id' => $ev,
+                    'diocese_id'=> $payinfo[3],
+                    'proof'=> $ref,
+                    'verif'=>'1'
+                ]);
             }
             // Respond
             return response()->json([
                 "status"=> true,
                 "message"=> "Success"
             ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getRevenue/{payId}",
+     *     tags={"Admin"},
+     *     summary="Get Payment Records",
+     *     description="ADMIN: Use this endpoint to get total revenue & payment count by providing the payId as a path parameter.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="payId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the payment record to be retrieved",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getRevenue($payId){
+        $role = auth()->payload()->get('role');
+        if ( $role!=null  && $role=='0') {
+            $total = 0;
+            $count = 0;
+            if($payId=='0'){
+                $count = pays0::count();
+                $total = pays0::sum('amt');
+            }else if($payId=='1'){
+                $count = pays1::count();
+                $total = pays1::sum('amt');
+            }else if($payId=='9'){
+                $count = pays9::count();
+                $total = pays9::sum('amt');
+            }
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> [
+                    'total'=>$total,
+                    'count'=>$count,
+                ],
+            ]);   
         }
         return response()->json([
             "status"=> false,
@@ -1763,6 +2080,9 @@ class ApiController extends Controller
             if( $payId=='1' ){
                 $pld = pays1::take($count)->skip($start)->get();
             }
+            if( $payId=='9' ){
+                $pld = pays9::take($count)->skip($start)->get();
+            }
             return response()->json([
                 "status"=> true,
                 "message"=> "Success",
@@ -1774,6 +2094,230 @@ class ApiController extends Controller
             "message"=> "Access denied"
         ],401);
     }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/getVerificationStats",
+     *     tags={"Admin"},
+     *     summary="Get statistics on user verification",
+     *     description="ADMIN: Use this endpoint to get statistics on diocese verification",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getVerificationStats(){
+        $pd1 = auth()->payload()->get('pd1');
+        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+            $totalVerified = diocese_basic_data::where('verif', '1')->count();
+            $totalUnverified = diocese_basic_data::where('verif', '0')->count();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> [
+                    'totalVerified'=>$totalVerified,
+                    'totalUnverified'=>$totalUnverified,
+                ],
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/getDioceseByV/{vstat}",
+     *     tags={"Admin"},
+     *     summary="Get diocese by whether they are verified or not",
+     *     description="ADMIN: Use this endpoint to get diocese by whether they are verified or not by providing the vstat as a path parameter. You can limit the result using start and count query parameters.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="vstat",
+     *         in="path",
+     *         required=true,
+     *         description="0 = Unverified / 1 = Verified",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Start index for limiting the result",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getDioceseByV($vstat){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pd1 = auth()->payload()->get('pd1');
+        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+            $members = diocese_basic_data::where('verif', $vstat)
+                ->skip($start)
+                ->take($count)
+                ->get();
+            $pld = [];
+            foreach ($members as $member) {
+                $diod = $member->diocese_id;
+                $genData = diocese_general_data::where('diocese_id', $diod)->first();
+                $pld[] = [
+                    'b'=> $member,
+                    'g'=> $genData,
+                ];
+            }
+            return response()->json([
+                "status"=> true,
+                "message"=> "Retrived the first ".$count." starting at ".$start." position",
+                "pld"=> $pld
+            ]);   
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/searchMember",
+     *     tags={"Admin"},
+     *     summary="Search for a diocese",
+     *     description="ADMIN: Use this endpoint to do a full-text search on diocese records (It will search accross nane and phone)",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         required=true,
+     *         description="What to search for",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function searchMember(){
+        $pd1 = auth()->payload()->get('pd1');
+        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+            $search = null;
+            if(request()->has('search')) {
+                $search = request()->input('search');
+            }
+            if($search) {
+                $members = diocese_basic_data::whereRaw("MATCH(name, phn) AGAINST(? IN BOOLEAN MODE)", [$search])
+                ->orderByRaw("MATCH(name, phn) AGAINST(? IN BOOLEAN MODE) DESC", [$search])
+                ->take(5)
+                ->get();
+                $pld = [];
+                foreach ($members as $member) {
+                    $diocese_id = $member->diocese_id;
+                    $genData = diocese_general_data::where('diocese_id', $diocese_id)->first();
+                    $pld[] = [
+                        'b'=> $member,
+                        'g'=> $genData,
+                    ];
+                }
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                    "pld"=> $pld
+                ]); 
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "The Search param is required"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/searchPayment/{payId}",
+     *     tags={"Admin"},
+     *     summary="Search for a diocese",
+     *     description="ADMIN: Use this endpoint to do a full-text search on diocese records (It will search accross nane and phone)",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="payId",
+     *         in="path",
+     *         required=true,
+     *         description="Type of payment to search for",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         required=true,
+     *         description="What to search for",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+
+    public function searchPayment($payId){
+        if ( $this->permOk('pp1')) { //Can read from pay
+            $search = null;
+            if(request()->has('search')) {
+                $search = request()->input('search');
+            }
+            if($search) {
+                $pld = null;
+                if( $payId=='0' ){
+                    $pld = pays0::whereRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE)", [$search])
+                    ->orderByRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE) DESC", [$search])
+                    ->take(5)
+                    ->get();
+                }
+                if( $payId=='1' ){
+                    $pld = pays1::whereRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE)", [$search])
+                    ->orderByRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE) DESC", [$search])
+                    ->take(5)
+                    ->get();
+                }
+                if( $payId=='9' ){
+                    $pld = pays9::whereRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE)", [$search])
+                    ->orderByRaw("MATCH(name, ref, diocese_id) AGAINST(? IN BOOLEAN MODE) DESC", [$search])
+                    ->take(5)
+                    ->get();
+                }
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success",
+                    "pld"=> $pld
+                ]); 
+            }
+            return response()->json([
+                "status"=> false,
+                "message"=> "The Search param is required"
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Access denied"
+        ],401);
+    }
+
 
     /**
      * @OA\Post(
@@ -2087,6 +2631,22 @@ class ApiController extends Controller
             "status"=> true,
             "message"=> "Logout successful",
         ]);
+    }
+
+    //---NON ENDPOINTS
+
+    public function permOk($pid): bool
+    {
+        // $pp = auth()->payload()->get($pid);
+        // return $pp!=null  && $pp=='1';
+        return true;
+    }
+
+    public function hasRole($rid): bool
+    {
+        // $role = auth()->payload()->get('role');
+        // return $role!=null  && $role==$rid;
+        return true;
     }
 
 }
