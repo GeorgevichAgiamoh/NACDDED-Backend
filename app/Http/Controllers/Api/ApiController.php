@@ -12,6 +12,8 @@ use App\Models\diocese_general_data;
 use App\Models\event_regs;
 use App\Models\events;
 use App\Models\files;
+use App\Models\msg;
+use App\Models\msgthread;
 use App\Models\nacdded_info;
 use App\Models\password_reset_tokens;
 use App\Models\payment_refs;
@@ -608,6 +610,13 @@ class ApiController extends Controller
      *     description="Use this endpoint to get information about events.",
      *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Number of records to skip. If not specified, 0",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
      *         name="count",
      *         in="query",
      *         required=false,
@@ -675,8 +684,7 @@ class ApiController extends Controller
      * )
      */
     public function deleteEvent($eventId){
-        $pw2 = auth()->payload()->get('pw2');
-        if ( $pw2!=null && $pw2=='1') {
+        if ($this->permOk('pw2')) {
             events::where('id', $eventId)->delete();
             event_regs::where('event_id', $eventId)->delete();
             return response()->json([
@@ -703,8 +711,7 @@ class ApiController extends Controller
      * )
      */
     public function getEventStat(){
-        $pw1 = auth()->payload()->get('pw1');
-        if ( $pw1!=null  && $pw1=='1') {
+        if ( $this->permOk('pw1')) {
             $totalEvents = events::count();
             return response()->json([
                 "status"=> true,
@@ -870,8 +877,7 @@ class ApiController extends Controller
      * )
      */
     public function approveEventReg($dioceseId,$eventId){
-        $pw1 = auth()->payload()->get('pw1');
-        if ( $pw1!=null  && $pw1=='1') { 
+        if ( $this->permOk('pw1')) { 
             $pld = event_regs::where('event_id', $eventId)
             ->where('diocese_id', $dioceseId)->first();
             if($pld){
@@ -1354,8 +1360,7 @@ class ApiController extends Controller
      * )
      */
     public function getEventRegs($eventID){
-        $pw1 = auth()->payload()->get('pw1');
-        if ( $pw1!=null  && $pw1=='1') { 
+        if ($this->permOk('pw1')) { 
             $start = 0;
             $count = 20;
             if(request()->has('start') && request()->has('count')) {
@@ -1395,8 +1400,7 @@ class ApiController extends Controller
      * )
      */
     public function getEventRegStat($eventID){
-        $pw1 = auth()->payload()->get('pw1');
-        if ( $pw1!=null  && $pw1=='1') {
+        if ( $this->permOk('pw1')) {
             $totalRegs = event_regs::where('event_id', $eventID)->count();
             return response()->json([
                 "status"=> true,
@@ -1472,6 +1476,303 @@ class ApiController extends Controller
 
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/searchMsgThread",
+     *     tags={"Api"},
+     *     summary="Full text search on subjects",
+     *     description=" Use this endpoint for Full text search on message subjects",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         required=true,
+     *         description="Search term",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function searchMsgThread(){
+        $search = null;
+        if(request()->has('search')) {
+            $search = request()->input('search');
+        }
+        if($search) {
+            $pld = msgthread::whereRaw("MATCH(subject) AGAINST(? IN BOOLEAN MODE)", [$search])
+            ->orderByRaw("MATCH(subject) AGAINST(? IN BOOLEAN MODE) DESC", [$search])
+            ->take(2)
+            ->get();
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld
+            ]); 
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "The Search param is required"
+        ]);
+    }
+    
+
+
+     /**
+     * @OA\Get(
+     *     path="/api/getMyMessagesStat/{uid}",
+     *     tags={"Api"},
+     *     summary="Get Message Count by UID",
+     *     description="Use this endpoint to get messages count for this `uid`",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="uid",
+     *         in="path",
+     *         required=true,
+     *         description="User ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getMyMessagesStat($uid){
+        $totalMessages = msgthread::where('from_uid', $uid)->orWhere('to_uid', $uid)->count();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> [
+                "totalMessages"=>$totalMessages,
+            ],
+        ]);
+    }
+
+
+     /**
+     * @OA\Get(
+     *     path="/api/getMyMessages/{uid}",
+     *     tags={"Api"},
+     *     summary="Get Message Threads by UID",
+     *     description="Use this endpoint to get messages Threads for this `uid`",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="uid",
+     *         in="path",
+     *         required=true,
+     *         description="User ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Index to start at",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="No of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getMyMessages($uid){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = msgthread::where('from_uid', $uid)->orWhere('to_uid', $uid)->skip($start)->take($count)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);
+    }
+
+     /**
+     * @OA\Get(
+     *     path="/api/getMessageThread/{tid}",
+     *     tags={"Api"},
+     *     summary="Get Messages by thread id",
+     *     description="Use this endpoint to get messages for this `tid`",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Parameter(
+     *         name="tid",
+     *         in="path",
+     *         required=true,
+     *         description="Thread ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start",
+     *         in="query",
+     *         required=false,
+     *         description="Index to start at",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="count",
+     *         in="query",
+     *         required=false,
+     *         description="No of records to retrieve",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response="200", description="Success", @OA\JsonContent()),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function getMessageThread($tid){
+        $start = 0;
+        $count = 20;
+        if(request()->has('start') && request()->has('count')) {
+            $start = request()->input('start');
+            $count = request()->input('count');
+        }
+        $pld = msg::where('tid', $tid)->skip($start)->take($count)->get();
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=> $pld,
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/createMsgThread",
+     *     tags={"Api"},
+     *     summary="Create a new message thread",
+     *     description="Use this endpoint to create a new message thread.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="from", type="string", description="Name of the person sending"),
+     *             @OA\Property(property="from_uid", type="string", description="User ID of the person sending"),
+     *             @OA\Property(property="to", type="string", description="Name of the person receiving"),
+     *             @OA\Property(property="to_uid", type="string", description="User ID of the person receiving"),
+     *             @OA\Property(property="subject", type="string", description="Message Subject"),
+     *             @OA\Property(property="from_mail", type="string", description=",,"),
+     *             @OA\Property(property="to_mail", type="string", description=",,"),
+     *             @OA\Property(property="last_msg", type="string", description="Last Message (First in this case) - Shown in preview"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function createMsgThread(Request $request){
+        $request->validate([
+            "from"=> "required",
+            "from_uid"=> "required",
+            "to"=> "required",
+            "to_uid"=> "required",
+            "last_msg"=> "required",
+            "subject"=>"required",
+            "from_mail"=>"required",
+            "to_mail"=>"required"
+        ]);
+        $mt = msgthread::create([
+            "from"=> $request->from,
+            "from_uid"=> $request->from_uid,
+            "to"=> $request->to,
+            "to_uid"=> $request->to_uid,
+            "last_msg"=> $request->last_msg,
+            "subject"=> $request->subject,
+            "from_mail"=> $request->from_mail,
+            "to_mail"=> $request->to_mail,
+        ]);
+        return response()->json([
+            "status"=> true,
+            "message"=> "Success",
+            "pld"=>$mt
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/sendMsg",
+     *     tags={"Api"},
+     *     summary="Send a message",
+     *     description="Use this endpoint to send a chat. You may also notify by mail",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="body", type="string", description="Message content"),
+     *             @OA\Property(property="who", type="string", description="User ID of the person sending"),
+     *             @OA\Property(property="tid", type="string", description="Thread ID of the message"),
+     *             @OA\Property(property="mail", type="string", description="If not empty, user will be mailed"),
+     *             @OA\Property(property="art", type="string", description="Document ID"),
+     *         )
+     *     ),
+     *     @OA\Response(response="200", description="Success"),
+     *     @OA\Response(response="401", description="Unauthorized"),
+     * )
+     */
+    public function sendMsg(Request $request){
+        $request->validate([
+            "body"=> "required",
+            "who"=> "required",
+            "tid"=> "required",
+            "mail"=> "required",
+            "art"=> "required",
+        ]);
+        $trd = msgthread::where('id',intval($request->tid))->first();
+        if($trd){
+            $ms=msg::create([
+                "tid"=> $request->tid,
+                "body"=> $request->body,
+                "who"=> $request->who,
+                "art"=> $request->art,
+            ]);
+            $trd->update([
+                "last_msg"=>$request->body,
+            ]);
+            if($request->mail!=''){
+                $isPerson1 = $request->who == $trd->from_uid;
+                $from = null;
+                $to = null;
+                if($isPerson1){
+                    $from = $trd->from;
+                    $to = $trd->to;
+                }else{
+                    $from = $trd->to;
+                    $to = $trd->from;
+                }
+                $data = [
+                    'name' => $from.' -> '.$to,
+                    'subject' => $trd->subject,
+                    'body' => $request->body,
+                    'link'=>$request->art!='_'?'https://api.schoolsilo.cloud/getFile/msg/'.$request->art:'https://portal.schoolsilo.cloud'
+                ];
+            
+                Mail::to($request->mail)->send(new SSSMails($data));
+                return response()->json([
+                    "status"=> true,
+                    "message"=> "Success (User was also mailed)",
+                    "pld"=>$ms
+                ]);
+            }
+            // Respond
+            return response()->json([
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=>$ms
+            ]);
+        }
+        return response()->json([
+            "status"=> false,
+            "message"=> "Thread not found"
+        ]);
+    }
 
 
 
@@ -1598,8 +1899,7 @@ class ApiController extends Controller
      * )
      */
     public function getHighlights(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $totalSchools = schools::count();
             $totalDiocese = diocese_basic_data::count();
             return response()->json([
@@ -1638,8 +1938,7 @@ class ApiController extends Controller
      * )
      */
     public function setAnnouncements(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ($this->hasRole('0')) {
               $request->validate([
                 "title"=>"required",
                 "msg"=> "required",
@@ -1681,8 +1980,7 @@ class ApiController extends Controller
      * )
      */
     public function deleteAnnouncements(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $request->validate([
                 "id"=>"required",
             ]);
@@ -1710,8 +2008,7 @@ class ApiController extends Controller
      * )
      */
      public function getAdmins(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $pld = admin_user::all();
             return response()->json([
                 "status"=> true,
@@ -1744,26 +2041,19 @@ class ApiController extends Controller
      * )
      */
     public function getAdmin(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null) { //Granted to all admin as is needed on first page
-            if(request()->has('email')) {
-                $eml = request()->input('email');
-                $pld = admin_user::where('email', $eml)->first();
-                return response()->json([
-                    "status"=> true,
-                    "message"=> "Success",
-                    "pld"=> $pld
-                ]);   
-            }
+        if(request()->has('email')) {
+            $eml = request()->input('email');
+            $pld = admin_user::where('email', $eml)->first();
             return response()->json([
-                "status"=> false,
-                "message"=> "Email required",
-            ]);
+                "status"=> true,
+                "message"=> "Success",
+                "pld"=> $pld
+            ]);   
         }
         return response()->json([
             "status"=> false,
-            "message"=> "Access denied"
-        ],401);
+            "message"=> "Email required",
+        ]);
     }
 
     /**
@@ -1796,8 +2086,7 @@ class ApiController extends Controller
      * )
      */
     public function setAdmin(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $request->validate([
                 "email"=>"required",
                 "lname"=>"required",
@@ -1859,8 +2148,7 @@ class ApiController extends Controller
      * )
      */
     public function removeAdmin(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null && $role=='0') {
+        if ( $this->hasRole('0')) {
             if(request()->has('email')) {
                 $eml = request()->input('email');
                 $dels = admin_user::where('email', $eml)->delete();
@@ -1907,8 +2195,7 @@ class ApiController extends Controller
      * )
      */
     public function sendMail(Request $request){
-        $pd2 = auth()->payload()->get('pd2');
-        if ( $pd2!=null  && $pd2=='1') { //Can write to dir
+        if ( $this->permOk('pd2')) { //Can write to dir
             $request->validate([
                 "name"=>"required",
                 "email"=>"required",
@@ -1960,8 +2247,7 @@ class ApiController extends Controller
      * )
      */
     public function setEvent(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
               $request->validate([
                 "title"=>"required",
                 "time"=> "required",
@@ -2018,8 +2304,7 @@ class ApiController extends Controller
      * )
      */
     public function uploadPayment(Request $request){ 
-        $pp2 = auth()->payload()->get('pp2');
-        if ( $pp2!=null  && $pp2=='1') {
+        if ( $this->permOk('pp2')) {
             $request->validate([
                 "ref"=> "required",
                 "name"=> "required",
@@ -2088,8 +2373,7 @@ class ApiController extends Controller
      * )
      */
     public function getRevenue($payId){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $total = 0;
             $count = 0;
             if($payId=='0'){
@@ -2150,8 +2434,7 @@ class ApiController extends Controller
      * )
      */
      public function getPayments($payId){
-        $pp1 = auth()->payload()->get('pp1');
-        if ( $pp1!=null  && $pp1=='1') { //Can read from dir
+        if ( $this->permOk('pp1')) { //Can read from dir
             $start = 0;
             $count = 20;
             if(request()->has('start') && request()->has('count')) {
@@ -2193,8 +2476,7 @@ class ApiController extends Controller
      * )
      */
     public function getVerificationStats(){
-        $pd1 = auth()->payload()->get('pd1');
-        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+        if ( $this->permOk('pd1')) { //Can read from dir
             $totalVerified = diocese_basic_data::where('verif', '1')->count();
             $totalUnverified = diocese_basic_data::where('verif', '0')->count();
             return response()->json([
@@ -2251,8 +2533,7 @@ class ApiController extends Controller
             $start = request()->input('start');
             $count = request()->input('count');
         }
-        $pd1 = auth()->payload()->get('pd1');
-        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+        if ( $this->permOk('pd1')) { //Can read from dir
             $members = diocese_basic_data::where('verif', $vstat)
                 ->skip($start)
                 ->take($count)
@@ -2297,8 +2578,7 @@ class ApiController extends Controller
      * )
      */
     public function searchMember(){
-        $pd1 = auth()->payload()->get('pd1');
-        if ( $pd1!=null  && $pd1=='1') { //Can read from dir
+        if ( $this->permOk('pd1')) { //Can read from dir
             $search = null;
             if(request()->has('search')) {
                 $search = request()->input('search');
@@ -2312,10 +2592,19 @@ class ApiController extends Controller
                 foreach ($members as $member) {
                     $diocese_id = $member->diocese_id;
                     $genData = diocese_general_data::where('diocese_id', $diocese_id)->first();
-                    $pld[] = [
-                        'b'=> $member,
-                        'g'=> $genData,
-                    ];
+                    if(request()->has('add_sec')) {
+                        $secData = secretary_data::where('diocese_id', $diocese_id)->first();
+                        $pld[] = [
+                            'b'=> $member,
+                            'g'=> $genData,
+                            's'=> $secData,
+                        ];
+                    }else{
+                        $pld[] = [
+                            'b'=> $member,
+                            'g'=> $genData,
+                        ];
+                    }
                 }
                 return response()->json([
                     "status"=> true,
@@ -2436,8 +2725,7 @@ class ApiController extends Controller
      * )
      */
     public function setNacddedInfo(Request $request){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ( $this->hasRole('0')) {
             $request->validate([
                 "email"=>"required",
                 "cname"=>"required",
@@ -2503,8 +2791,7 @@ class ApiController extends Controller
      * )
      */
     public function getNacddedInfo(){
-        $role = auth()->payload()->get('role');
-        if ( $role!=null  && $role=='0') {
+        if ($this->hasRole('0')) {
             if(request()->has('email')) {
                 $eml = request()->input('email');
                 $pld = nacdded_info::where('email', $eml)->first();
